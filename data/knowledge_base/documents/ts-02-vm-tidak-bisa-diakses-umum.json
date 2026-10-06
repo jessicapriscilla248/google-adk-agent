@@ -1,0 +1,23 @@
+{
+  "document_id": "ts-02-vm-tidak-bisa-diakses-umum",
+  "title": "VM Tidak Bisa Diakses (Umum)",
+  "category": "general_troubleshooting",
+  "source_ids": [
+    "GCE-027",
+    "GCE-001",
+    "GCE-028",
+    "GCE-025",
+    "GCE-005",
+    "GCE-022"
+  ],
+  "url": "https://docs.cloud.google.com/compute/docs/troubleshooting/vm-startup",
+  "source_urls": {
+    "GCE-027": "https://docs.cloud.google.com/compute/docs/troubleshooting/vm-startup",
+    "GCE-001": "https://docs.cloud.google.com/compute/docs/troubleshooting/general-tips",
+    "GCE-028": "https://docs.cloud.google.com/compute/docs/troubleshooting/troubleshooting-networking",
+    "GCE-025": "https://docs.cloud.google.com/compute/docs/troubleshooting/troubleshooting-vm-creation",
+    "GCE-005": "https://docs.cloud.google.com/compute/docs/instances/instance-life-cycle",
+    "GCE-022": "https://docs.cloud.google.com/compute/docs/troubleshooting"
+  },
+  "text": "**Gejala/contoh error:** VM tidak merespons ping/SSH/RDP/HTTP; Console menunjukkan status RUNNING tetapi tidak ada respons apa pun.\n\n**Pertanyaan klarifikasi:** Metode akses apa yang gagal (SSH, RDP, HTTP aplikasi, ICMP)? Apakah pernah berhasil sebelumnya dan kapan terakhir berhasil? Perubahan konfigurasi terakhir (firewall, startup script, resize, machine type)? Apakah VM punya external IP atau diakses via IAP/VPN?\n\n**Kemungkinan penyebab:** Kombinasi dari kategori berbeda — ini adalah gejala \"payung\" yang harus dipecah ke topik lebih spesifik: status VM (lihat basics 3.2), firewall rule (topik 6), routing/IP (basics 3.8–3.9), autentikasi (topik 3/4), atau VM benar-benar unresponsive di dalam guest OS (topik 11).\n\n**Pemeriksaan aman:**\n1. Periksa status instance di Console (read-only).\n2. Periksa VM screenshot/serial console output untuk melihat tahap boot (read-only, tidak mengubah apa pun) — GCE-027, GCE-001.\n3. Periksa firewall rule dan route yang berlaku untuk NIC tersebut (read-only) — GCE-028.\n\n**Langkah diagnosis bertahap:**\n1. Jika status bukan RUNNING → rujuk topik 1.\n2. Jika status RUNNING tetapi serial console tidak menunjukkan aktivitas/boot selesai → rujuk topik 11 (Masalah startup).\n3. Jika boot tampak selesai tetapi tidak ada respons jaringan sama sekali (termasuk dari internal network) → rujuk topik 12 (Masalah konfigurasi jaringan) dan topik 6 (Firewall).\n4. Jika hanya SSH/RDP yang gagal sementara jaringan lain normal → rujuk topik 3/4.\n\n**Solusi/workaround:** Tergantung topik spesifik hasil triase di atas — lihat topik terkait.\n\n**Risiko/catatan:** Jangan langsung menyimpulkan \"VM mati\" dan menyarankan restart sebagai langkah pertama; restart dapat menutupi bukti diagnostik di serial console dan berisiko bila ada operasi disk yang sedang berjalan (GCE-025 menyebut operasi clone/snapshot aktif dapat memblokir start).\n\n**Verifikasi:** Metode akses yang semula gagal kini berhasil secara konsisten (bukan hanya sekali).\n\n**Eskalasi/alternatif:** Jika triase di atas tidak menemukan kecocokan pola gejala, arahkan ke Google Cloud Support dengan menyertakan serial console log (tanpa data sensitif) dan connectivity test result.\n\n**Sumber:** GCE-001, GCE-005, GCE-027, GCE-028, GCE-022."
+}

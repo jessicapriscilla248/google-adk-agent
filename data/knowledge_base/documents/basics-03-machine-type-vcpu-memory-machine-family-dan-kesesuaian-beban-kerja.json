@@ -1,0 +1,15 @@
+{
+  "document_id": "basics-03-machine-type-vcpu-memory-machine-family-dan-kesesuaian-beban-kerja",
+  "title": "Machine Type: vCPU, Memory, Machine Family, dan Kesesuaian Beban Kerja",
+  "category": "instance_configuration",
+  "source_ids": [
+    "GCE-006",
+    "GCE-002"
+  ],
+  "url": "https://docs.cloud.google.com/compute/docs/machine-resource",
+  "source_urls": {
+    "GCE-006": "https://docs.cloud.google.com/compute/docs/machine-resource",
+    "GCE-002": "https://docs.cloud.google.com/compute/docs/troubleshooting/known-issues"
+  },
+  "text": "**Definisi:** Machine family adalah kumpulan konfigurasi prosesor dan hardware yang dioptimalkan untuk kategori beban kerja tertentu (contoh: general-purpose, compute-optimized, memory-optimized, accelerator-optimized). Machine series adalah subdivisi dalam family (misalnya seri E untuk efisiensi biaya, seri C untuk performa). Machine type adalah spesifikasi konkret jumlah vCPU, memori, dan akselerator (GCE-006).\n\n**Rasio memory-to-vCPU umum** (GCE-006):\n| Tipe | Rasio memori per vCPU |\n|---|---|\n| highcpu | ±2 GB |\n| standard | ±4 GB |\n| highmem | ±8 GB |\n| ultramem | 24–31 GB |\n\n**Panduan pemilihan** (GCE-006): general-purpose (N4, N2, E2) untuk web server/microservices/dev environment; compute-optimized (H4D, C2D) untuk HPC; memory-optimized (X5, M4) untuk database in-memory/analitik data; accelerator-optimized (A4X, A3) untuk AI/ML dengan GPU.\n\n**Mengapa penting saat troubleshooting?** Machine type yang tidak sesuai family dapat menyebabkan kegagalan create VM (lihat `troubleshooting_topics.md` — VM gagal dibuat), masalah kompatibilitas OS (banyak known issue Windows terkait batas vCPU per machine family — GCE-002), dan performa disk yang dibatasi oleh machine type (lihat 3.6 dan `troubleshooting_topics.md` — VM lambat)."
+}

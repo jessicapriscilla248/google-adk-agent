@@ -1,0 +1,23 @@
+{
+  "document_id": "ts-05-tidak-bisa-terhubung-ke-internet",
+  "title": "Tidak Bisa Terhubung ke Internet",
+  "category": "networking",
+  "source_ids": [
+    "GCE-001",
+    "GCE-012",
+    "GCE-011",
+    "GCE-028",
+    "GCE-019",
+    "GCE-013"
+  ],
+  "url": "https://docs.cloud.google.com/compute/docs/troubleshooting/general-tips",
+  "source_urls": {
+    "GCE-001": "https://docs.cloud.google.com/compute/docs/troubleshooting/general-tips",
+    "GCE-012": "https://docs.cloud.google.com/vpc/docs/routes",
+    "GCE-011": "https://docs.cloud.google.com/firewall/docs/firewalls",
+    "GCE-028": "https://docs.cloud.google.com/compute/docs/troubleshooting/troubleshooting-networking",
+    "GCE-019": "https://docs.cloud.google.com/compute/docs/troubleshooting/troubleshooting-rdp",
+    "GCE-013": "https://docs.cloud.google.com/compute/docs/ip-addresses"
+  },
+  "text": "**Gejala/contoh error:** VM tidak dapat `ping`/`curl` ke luar, update paket OS gagal, aplikasi tidak bisa memanggil API eksternal.\n\n**Pertanyaan klarifikasi:** Arah masalah — VM tidak bisa menjangkau internet (egress) atau internet tidak bisa menjangkau VM (ingress)? Apakah VM punya external IP? Apakah menggunakan Cloud NAT? Kapan terakhir kali berhasil, dan perubahan apa yang terjadi sejak itu?\n\n**Kemungkinan penyebab:**\n- Tidak ada external IP **dan** tidak ada Cloud NAT/proxy untuk egress (basics 3.8, GCE-001).\n- Tidak ada default route `0.0.0.0/0` menuju `default-internet-gateway` (mungkin terhapus/diubah oleh custom routing) (GCE-012).\n- Firewall egress memblokir traffic keluar (ingat: default VPC mengizinkan semua egress, tapi VPC custom bisa deny-by-default) (GCE-011, GCE-028).\n- DNS tidak terkonfigurasi benar (termasuk isu migrasi ke zonal DNS) (GCE-028).\n- Masalah MTU/fragmentasi paket pada custom image (default MTU 1460 byte; untuk UDP kurangi 28 byte header) (GCE-001).\n- Idle connection timeout (Cloud Next Generation Firewall memutus idle flow setelah 10 menit; Cloud NAT punya timeout dapat dikonfigurasi) — menyerupai gejala \"putus koneksi\" bukan \"tidak bisa connect\" (GCE-001, GCE-028).\n\n**Pemeriksaan aman:**\n1. Periksa apakah VM memiliki external IP (read-only).\n2. Periksa keberadaan default route internet gateway (read-only) — GCE-012.\n3. Periksa firewall egress rule yang berlaku (read-only) — GCE-011.\n4. Jalankan Connectivity Test di Console (read-only) — GCE-019, GCE-028.\n\n**Langkah diagnosis bertahap:**\n1. Tidak ada external IP dan tidak ada Cloud NAT → ini _expected behavior_, bukan bug; opsi: tambahkan external IP (ubah exposure keamanan, perlu konfirmasi) atau konfigurasi Cloud NAT.\n2. Ada external IP tapi tetap gagal → periksa default route; bila sudah dihapus/diubah oleh custom route, ini perubahan konfigurasi yang signifikan — konfirmasi dengan pengguna sebelum mengubah routing.\n3. Route dan IP normal tapi tetap gagal → periksa firewall egress rule.\n4. Semua konfigurasi tampak benar tapi koneksi putus-putus pada koneksi idle lama → terapkan TCP keepalive (`SO_KEEPALIVE`, `TCP_KEEPIDLE`, `TCP_KEEPINTVL`, `TCP_KEEPCNT`) di level aplikasi/OS (GCE-001).\n5. Masalah spesifik custom image dengan fragmentasi paket → sesuaikan MTU aplikasi (GCE-001).\n\n**Solusi/workaround:** Tambah external IP atau Cloud NAT; perbaiki/tambahkan default route; sesuaikan firewall egress; terapkan keepalive untuk idle connection.\n\n**Risiko/catatan:** Menambah external IP memperbesar permukaan serangan — jelaskan trade-off keamanan vs kemudahan akses (GCE-013). Mengubah custom route dapat memengaruhi traffic resource lain dalam VPC yang sama — periksa dampak luas sebelum mengubah.\n\n**Verifikasi:** VM dapat melakukan outbound request (mis. `curl` berhasil) secara konsisten, bukan hanya sekali.\n\n**Eskalasi/alternatif:** Jika semua lapisan (IP, route, firewall) sudah benar tetapi masalah menetap, kemungkinan ada masalah di sisi penyedia layanan tujuan atau perlu Connectivity Test lanjutan dari Google Cloud Support.\n\n**Sumber:** GCE-001, GCE-012, GCE-013, GCE-028, GCE-011."
+}

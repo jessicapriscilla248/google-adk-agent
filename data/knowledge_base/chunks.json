@@ -1,0 +1,1527 @@
+[
+  {
+    "chunk_id": "basics-00-gambaran-umum::chunk-01",
+    "document_id": "basics-00-gambaran-umum",
+    "title": "Gambaran Umum Compute Engine",
+    "category": "instance_configuration",
+    "text": "Compute Engine adalah layanan komputasi dan hosting Google Cloud yang memungkinkan pengguna membuat dan menjalankan virtual machine (VM) di atas infrastruktur Google (GCE-004). Layanan ini mencakup pilihan machine type yang luas, beberapa jenis penyimpanan persisten, dan integrasi jaringan melalui Virtual Private Cloud (VPC). Use case umum meliputi migrasi beban kerja dari on-premises, hosting aplikasi web yang dapat diskalakan, cluster komputasi besar, dan hosting database (GCE-004). Perlu dicatat: Compute Engine menyediakan infrastruktur-as-a-service (IaaS) — pengguna bertanggung jawab mengelola sistem operasi guest, aplikasi, dan konfigurasi di dalam VM, sementara Google mengelola infrastruktur fisik, hypervisor, dan jaringan dasar.",
+    "url": "https://docs.cloud.google.com/compute/docs",
+    "source_ids": [
+      "GCE-004"
+    ]
+  },
+  {
+    "chunk_id": "basics-01-compute-engine-layanan::chunk-01",
+    "document_id": "basics-01-compute-engine-layanan",
+    "title": "Compute Engine (layanan)",
+    "category": "general_troubleshooting",
+    "text": "Definisi: Layanan virtualisasi IaaS Google Cloud untuk menjalankan VM dengan konfigurasi vCPU, memori, disk, dan jaringan yang dapat disesuaikan (GCE-004). Fungsi: Menyediakan unit komputasi dasar untuk beban kerja yang membutuhkan kontrol penuh atas sistem operasi, dibandingkan layanan serverless/managed lainnya. Hubungan dengan komponen lain: Setiap VM instance bergantung pada machine type, image/boot disk, network interface, dan (opsional) service account. Mengapa penting saat troubleshooting? Memahami bahwa Compute Engine adalah IaaS membantu menentukan batas tanggung jawab: masalah di dalam guest OS (misalnya proses crash, aplikasi hang) umumnya berada di luar kendali layer infrastruktur Google Cloud, sedangkan masalah alokasi resource, jaringan VPC, dan IAM berada di layer platform.",
+    "url": "https://docs.cloud.google.com/compute/docs",
+    "source_ids": [
+      "GCE-004"
+    ]
+  },
+  {
+    "chunk_id": "basics-02-vm-instance-dan-lifecycle-status-instance::chunk-01",
+    "document_id": "basics-02-vm-instance-dan-lifecycle-status-instance",
+    "title": "VM Instance dan Lifecycle/Status Instance",
+    "category": "vm_lifecycle",
+    "text": "Definisi: VM instance adalah mesin virtual yang berjalan pada infrastruktur Compute Engine, memiliki status (state) yang berubah sepanjang siklus hidupnya (GCE-005). Status utama (GCE-005): - PROVISIONING — Compute Engine mengalokasikan resource untuk instance. - STAGING — resource telah dialokasikan, instance sedang disiapkan untuk boot pertama kali; belum berjalan. - RUNNING — instance sedang boot atau sudah berjalan normal. - PENDING_STOP — graceful shutdown sedang berlangsung (bila fitur ini diaktifkan). - STOPPING — guest OS sedang dimatikan. - TERMINATED — instance berhenti; dapat di-restart atau dihapus. - REPAIRING — Compute Engine menjalankan operasi perbaikan akibat internal error atau maintenance host; instance tidak dapat digunakan selama proses ini.",
+    "url": "https://docs.cloud.google.com/compute/docs/instances/instance-life-cycle",
+    "source_ids": [
+      "GCE-005"
+    ]
+  },
+  {
+    "chunk_id": "basics-02-vm-instance-dan-lifecycle-status-instance::chunk-02",
+    "document_id": "basics-02-vm-instance-dan-lifecycle-status-instance",
+    "title": "VM Instance dan Lifecycle/Status Instance",
+    "category": "vm_lifecycle",
+    "text": "- REPAIRING — Compute Engine menjalankan operasi perbaikan akibat internal error atau maintenance host; instance tidak dapat digunakan selama proses ini. - SUSPENDING / SUSPENDED — instance dibekukan dengan memori dipertahankan; maksimum 60 hari sebelum otomatis menjadi TERMINATED. - PENDING — khusus Flex-start VM (durasi tunggu ≥90 detik) atau TPU standalone; bukan status umum semua VM — _catatan: ini adalah detail khusus, jangan digeneralisasi._ Hubungan dengan komponen lain: Biaya CPU/memori dikenakan selama RUNNING dan PENDING_STOP; resource eksternal seperti disk dan IP tetap dikenai biaya selama resource tersebut ada, terlepas dari status VM (GCE-005).",
+    "url": "https://docs.cloud.google.com/compute/docs/instances/instance-life-cycle",
+    "source_ids": [
+      "GCE-005"
+    ]
+  },
+  {
+    "chunk_id": "basics-02-vm-instance-dan-lifecycle-status-instance::chunk-03",
+    "document_id": "basics-02-vm-instance-dan-lifecycle-status-instance",
+    "title": "VM Instance dan Lifecycle/Status Instance",
+    "category": "vm_lifecycle",
+    "text": "Hubungan dengan komponen lain: Biaya CPU/memori dikenakan selama RUNNING dan PENDING_STOP; resource eksternal seperti disk dan IP tetap dikenai biaya selama resource tersebut ada, terlepas dari status VM (GCE-005). Mengapa penting saat troubleshooting? Status instance adalah titik awal diagnosis hampir semua masalah akses (SSH/RDP gagal, VM tidak responsif). Status TERMINATED yang tidak bisa kembali RUNNING sering menandakan keterbatasan resource (lihat quota dan resource availability).",
+    "url": "https://docs.cloud.google.com/compute/docs/instances/instance-life-cycle",
+    "source_ids": [
+      "GCE-005"
+    ]
+  },
+  {
+    "chunk_id": "basics-03-machine-type-vcpu-memory-machine-family-dan-kesesuaian-beban-kerja::chunk-01",
+    "document_id": "basics-03-machine-type-vcpu-memory-machine-family-dan-kesesuaian-beban-kerja",
+    "title": "Machine Type: vCPU, Memory, Machine Family, dan Kesesuaian Beban Kerja",
+    "category": "instance_configuration",
+    "text": "Definisi: Machine family adalah kumpulan konfigurasi prosesor dan hardware yang dioptimalkan untuk kategori beban kerja tertentu (contoh: general-purpose, compute-optimized, memory-optimized, accelerator-optimized). Machine series adalah subdivisi dalam family (misalnya seri E untuk efisiensi biaya, seri C untuk performa). Machine type adalah spesifikasi konkret jumlah vCPU, memori, dan akselerator (GCE-006). Rasio memory-to-vCPU umum (GCE-006): | Tipe | Rasio memori per vCPU | |---|---| | highcpu | ±2 GB | | standard | ±4 GB | | highmem | ±8 GB | | ultramem | 24–31 GB |",
+    "url": "https://docs.cloud.google.com/compute/docs/machine-resource",
+    "source_ids": [
+      "GCE-006",
+      "GCE-002"
+    ]
+  },
+  {
+    "chunk_id": "basics-03-machine-type-vcpu-memory-machine-family-dan-kesesuaian-beban-kerja::chunk-02",
+    "document_id": "basics-03-machine-type-vcpu-memory-machine-family-dan-kesesuaian-beban-kerja",
+    "title": "Machine Type: vCPU, Memory, Machine Family, dan Kesesuaian Beban Kerja",
+    "category": "instance_configuration",
+    "text": "Rasio memory-to-vCPU umum (GCE-006): | Tipe | Rasio memori per vCPU | |---|---| | highcpu | ±2 GB | | standard | ±4 GB | | highmem | ±8 GB | | ultramem | 24–31 GB | Panduan pemilihan (GCE-006): general-purpose (N4, N2, E2) untuk web server/microservices/dev environment; compute-optimized (H4D, C2D) untuk HPC; memory-optimized (X5, M4) untuk database in-memory/analitik data; accelerator-optimized (A4X, A3) untuk AI/ML dengan GPU.",
+    "url": "https://docs.cloud.google.com/compute/docs/machine-resource",
+    "source_ids": [
+      "GCE-006",
+      "GCE-002"
+    ]
+  },
+  {
+    "chunk_id": "basics-03-machine-type-vcpu-memory-machine-family-dan-kesesuaian-beban-kerja::chunk-03",
+    "document_id": "basics-03-machine-type-vcpu-memory-machine-family-dan-kesesuaian-beban-kerja",
+    "title": "Machine Type: vCPU, Memory, Machine Family, dan Kesesuaian Beban Kerja",
+    "category": "instance_configuration",
+    "text": "Panduan pemilihan (GCE-006): general-purpose (N4, N2, E2) untuk web server/microservices/dev environment; compute-optimized (H4D, C2D) untuk HPC; memory-optimized (X5, M4) untuk database in-memory/analitik data; accelerator-optimized (A4X, A3) untuk AI/ML dengan GPU. Mengapa penting saat troubleshooting? Machine type yang tidak sesuai family dapat menyebabkan kegagalan create VM (lihat troubleshooting_topics.md — VM gagal dibuat), masalah kompatibilitas OS (banyak known issue Windows terkait batas vCPU per machine family — GCE-002), dan performa disk yang dibatasi oleh machine type (lihat 3.6 dan troubleshooting_topics.md — VM lambat).",
+    "url": "https://docs.cloud.google.com/compute/docs/machine-resource",
+    "source_ids": [
+      "GCE-006",
+      "GCE-002"
+    ]
+  },
+  {
+    "chunk_id": "basics-04-region-dan-zone::chunk-01",
+    "document_id": "basics-04-region-dan-zone",
+    "title": "Region dan Zone",
+    "category": "instance_configuration",
+    "text": "Definisi: Region adalah area geografis independen yang terdiri atas beberapa zone; zone diberi nama dua bagian, misalnya us-central1-a (region us-central1, zone a) (GCE-007). Jenis resource berdasarkan cakupan (GCE-007): - Zonal — terikat satu zone (instance, zonal persistent disk); resource lain yang berinteraksi harus berada di zone yang sama. - Regional — dapat diakses seluruh zone dalam satu region (static IP, regional disk). - Global — dapat digunakan lintas lokasi (image, firewall rule). Pertimbangan pemilihan (GCE-007): toleransi kegagalan (distribusi lintas zone/region), latensi jaringan (dekat dengan pengguna), dan kebutuhan akselerasi AI/ML (AI zone dengan GPU/TPU kapasitas tinggi).",
+    "url": "https://docs.cloud.google.com/compute/docs/regions-zones",
+    "source_ids": [
+      "GCE-007"
+    ]
+  },
+  {
+    "chunk_id": "basics-04-region-dan-zone::chunk-02",
+    "document_id": "basics-04-region-dan-zone",
+    "title": "Region dan Zone",
+    "category": "instance_configuration",
+    "text": "Pertimbangan pemilihan (GCE-007): toleransi kegagalan (distribusi lintas zone/region), latensi jaringan (dekat dengan pengguna), dan kebutuhan akselerasi AI/ML (AI zone dengan GPU/TPU kapasitas tinggi). Mengapa penting saat troubleshooting? Kesalahan paling umum adalah mencoba menghubungkan resource zonal lintas zone (misalnya attach disk dari zone berbeda), atau salah mengira resource availability (kapasitas fisik zone) sebagai masalah quota (lihat 3.12).",
+    "url": "https://docs.cloud.google.com/compute/docs/regions-zones",
+    "source_ids": [
+      "GCE-007"
+    ]
+  },
+  {
+    "chunk_id": "basics-05-boot-disk-image-dan-startup::chunk-01",
+    "document_id": "basics-05-boot-disk-image-dan-startup",
+    "title": "Boot Disk, Image, dan Startup",
+    "category": "vm_lifecycle",
+    "text": "Definisi image: Template sistem operasi yang digunakan Compute Engine untuk membuat boot disk VM (GCE-032). Terdapat dua jenis: public image (disediakan Google/komunitas open source/vendor pihak ketiga, tersedia untuk semua project) dan custom image (milik satu project, dibuat dari boot disk/image yang sudah ada) (GCE-032). Hubungan image–boot disk: Saat instance dibuat, image yang dipilih digunakan untuk membuat persistent boot disk; ukuran boot disk default mengikuti ukuran image namun dapat diperbesar (resize) (GCE-032).",
+    "url": "https://docs.cloud.google.com/compute/docs/images",
+    "source_ids": [
+      "GCE-032",
+      "GCE-002",
+      "GCE-024",
+      "GCE-027"
+    ]
+  },
+  {
+    "chunk_id": "basics-05-boot-disk-image-dan-startup::chunk-02",
+    "document_id": "basics-05-boot-disk-image-dan-startup",
+    "title": "Boot Disk, Image, dan Startup",
+    "category": "vm_lifecycle",
+    "text": "Hubungan image–boot disk: Saat instance dibuat, image yang dipilih digunakan untuk membuat persistent boot disk; ukuran boot disk default mengikuti ukuran image namun dapat diperbesar (resize) (GCE-032). Startup script: Berkas yang dijalankan sebagai root saat proses boot VM untuk menjalankan tugas inisialisasi (instalasi paket, menjalankan service, konfigurasi). Script disalin ke VM, diberi hak eksekusi, lalu dijalankan otomatis saat boot (GCE-002, sumber startup-scripts). Error fatal dalam startup script dapat menyebabkan boot tidak selesai sempurna, service yang seharusnya berjalan tidak aktif, atau VM tampak tidak responsif.",
+    "url": "https://docs.cloud.google.com/compute/docs/images",
+    "source_ids": [
+      "GCE-032",
+      "GCE-002",
+      "GCE-024",
+      "GCE-027"
+    ]
+  },
+  {
+    "chunk_id": "basics-05-boot-disk-image-dan-startup::chunk-03",
+    "document_id": "basics-05-boot-disk-image-dan-startup",
+    "title": "Boot Disk, Image, dan Startup",
+    "category": "vm_lifecycle",
+    "text": "Startup script: Berkas yang dijalankan sebagai root saat proses boot VM untuk menjalankan tugas inisialisasi (instalasi paket, menjalankan service, konfigurasi). Script disalin ke VM, diberi hak eksekusi, lalu dijalankan otomatis saat boot (GCE-002, sumber startup-scripts). Error fatal dalam startup script dapat menyebabkan boot tidak selesai sempurna, service yang seharusnya berjalan tidak aktif, atau VM tampak tidak responsif. Mengapa penting saat troubleshooting? Masalah \"boot disk penuh\" (GCE-024, GCE-027) dan \"VM gagal start\" (GCE-027) sering berakar dari kombinasi image yang tidak kompatibel dengan machine type baru (lihat known issue migrasi machine type generasi — GCE-002), filesystem korup, atau startup script yang gagal.",
+    "url": "https://docs.cloud.google.com/compute/docs/images",
+    "source_ids": [
+      "GCE-032",
+      "GCE-002",
+      "GCE-024",
+      "GCE-027"
+    ]
+  },
+  {
+    "chunk_id": "basics-06-persistent-disk-vs-local-ssd::chunk-01",
+    "document_id": "basics-06-persistent-disk-vs-local-ssd",
+    "title": "Persistent Disk vs Local SSD",
+    "category": "disk_storage",
+    "text": "Persistent Disk (PD): Layanan penyimpanan blok yang independen dari instance yang terpasang — data tetap ada meski instance dihapus, dapat dilepas-pasang ke instance lain, dan dapat di-resize tanpa menghentikan instance atau kehilangan data (GCE-008). Performa PD mengikuti rumus Actual Performance = MIN(disk performance limit, machine type limit) — performa ditentukan oleh nilai terendah antara batas disk dan batas machine type (GCE-023). Local SSD: Penyimpanan sementara (ephemeral) berbasis solid-state yang terpasang langsung ke server fisik; performa IOPS/latensi jauh lebih tinggi daripada Persistent Disk, namun data dapat hilang jika instance stop atau terminate, tidak dapat ditambahkan setelah instance dibuat, dan tidak bisa di-backup lewat snapshot/machine image (GCE-009).",
+    "url": "https://docs.cloud.google.com/compute/docs/disks",
+    "source_ids": [
+      "GCE-008",
+      "GCE-023",
+      "GCE-009",
+      "GCE-024"
+    ]
+  },
+  {
+    "chunk_id": "basics-06-persistent-disk-vs-local-ssd::chunk-02",
+    "document_id": "basics-06-persistent-disk-vs-local-ssd",
+    "title": "Persistent Disk vs Local SSD",
+    "category": "disk_storage",
+    "text": "Local SSD: Penyimpanan sementara (ephemeral) berbasis solid-state yang terpasang langsung ke server fisik; performa IOPS/latensi jauh lebih tinggi daripada Persistent Disk, namun data dapat hilang jika instance stop atau terminate, tidak dapat ditambahkan setelah instance dibuat, dan tidak bisa di-backup lewat snapshot/machine image (GCE-009). | Aspek | Persistent Disk | Local SSD | |---|---|---| | Durabilitas | Tahan lama, dapat direplikasi lintas zone | Hilang saat stop/terminate | | Performa | Lebih rendah, skala dengan ukuran & machine type | Sangat tinggi, latensi rendah | | Penggunaan khas | Boot disk, data persisten | Cache, scratch space, tempdb | | Dapat ditambah setelah create | Ya | Tidak |",
+    "url": "https://docs.cloud.google.com/compute/docs/disks",
+    "source_ids": [
+      "GCE-008",
+      "GCE-023",
+      "GCE-009",
+      "GCE-024"
+    ]
+  },
+  {
+    "chunk_id": "basics-06-persistent-disk-vs-local-ssd::chunk-03",
+    "document_id": "basics-06-persistent-disk-vs-local-ssd",
+    "title": "Persistent Disk vs Local SSD",
+    "category": "disk_storage",
+    "text": "| Performa | Lebih rendah, skala dengan ukuran & machine type | Sangat tinggi, latensi rendah | | Penggunaan khas | Boot disk, data persisten | Cache, scratch space, tempdb | | Dapat ditambah setelah create | Ya | Tidak | Mengapa penting saat troubleshooting? Kesalahan menyamakan kedua jenis disk ini bisa fatal — misalnya mengandalkan Local SSD untuk data yang harus permanen. Untuk topik \"disk penuh\", penting membedakan kapasitas disk yang di-provision (ukuran GB pada Compute Engine) dengan ruang kosong filesystem di guest OS — keduanya adalah hal berbeda (GCE-024); disk bisa berukuran besar tetapi filesystem di dalamnya belum di-extend untuk memakai seluruh kapasitas.",
+    "url": "https://docs.cloud.google.com/compute/docs/disks",
+    "source_ids": [
+      "GCE-008",
+      "GCE-023",
+      "GCE-009",
+      "GCE-024"
+    ]
+  },
+  {
+    "chunk_id": "basics-07-network-interface-nic::chunk-01",
+    "document_id": "basics-07-network-interface-nic",
+    "title": "Network Interface (NIC)",
+    "category": "networking",
+    "text": "Definisi: Setiap VM memiliki virtual network interface (vNIC) default yang terhubung ke subnet dalam VPC. VM dapat memiliki satu atau lebih NIC, namun jumlah NIC tambahan hanya dapat dikonfigurasi saat instance dibuat, bukan setelahnya; bare metal instance tidak mendukung multi-NIC sama sekali (GCE-031). Kapan multi-NIC digunakan: Ketika aplikasi memerlukan pemisahan traffic, misalnya memisahkan data plane dari management plane (GCE-031). Dynamic Network Interfaces memungkinkan penambahan/pengurangan subinterface berbasis VLAN tanpa restart instance (GCE-031). Mengapa penting saat troubleshooting? Masalah konektivitas jaringan perlu memeriksa NIC mana yang digunakan, subnet/VPC yang terhubung, serta firewall rule dan route yang berlaku untuk NIC tersebut (GCE-028).",
+    "url": "https://docs.cloud.google.com/compute/docs/networking/network-overview",
+    "source_ids": [
+      "GCE-031",
+      "GCE-028"
+    ]
+  },
+  {
+    "chunk_id": "basics-08-internal-ip-dan-external-ip::chunk-01",
+    "document_id": "basics-08-internal-ip-dan-external-ip",
+    "title": "Internal IP dan External IP",
+    "category": "networking",
+    "text": "Internal IP: Dialokasikan dari subnet tempat NIC terhubung; hanya dapat diakses dalam VPC yang sama; digunakan untuk komunikasi antar-instance internal (GCE-013). External IP: Memungkinkan komunikasi dengan internet/jaringan luar VPC; hanya resource dengan external IP yang dapat berkomunikasi langsung ke luar VPC (GCE-013). Ephemeral vs Static: - Ephemeral — ditetapkan otomatis, dapat berubah kapan saja. - Static — alamat tetap yang dipesan pengguna, tidak berubah selama dipegang. Alternatif tanpa external IP: Cloud NAT untuk outbound traffic, IAP untuk akses administratif (SSH/RDP), atau load balancer untuk serving traffic masuk (GCE-013, GCE-021). Menghapus external IP mengurangi permukaan serangan (attack surface) (GCE-013).",
+    "url": "https://docs.cloud.google.com/compute/docs/ip-addresses",
+    "source_ids": [
+      "GCE-013",
+      "GCE-021"
+    ]
+  },
+  {
+    "chunk_id": "basics-08-internal-ip-dan-external-ip::chunk-02",
+    "document_id": "basics-08-internal-ip-dan-external-ip",
+    "title": "Internal IP dan External IP",
+    "category": "networking",
+    "text": "Alternatif tanpa external IP: Cloud NAT untuk outbound traffic, IAP untuk akses administratif (SSH/RDP), atau load balancer untuk serving traffic masuk (GCE-013, GCE-021). Menghapus external IP mengurangi permukaan serangan (attack surface) (GCE-013). Mengapa penting saat troubleshooting? \"Tidak ada akses internet\" dan \"SSH/RDP gagal\" sering disebabkan oleh ketiadaan external IP (atau IP berubah karena ephemeral) dikombinasikan dengan tidak adanya jalur alternatif (Cloud NAT/IAP) — lihat troubleshooting_topics.md.",
+    "url": "https://docs.cloud.google.com/compute/docs/ip-addresses",
+    "source_ids": [
+      "GCE-013",
+      "GCE-021"
+    ]
+  },
+  {
+    "chunk_id": "basics-09-vpc-network-subnet-route-dan-firewall-rule::chunk-01",
+    "document_id": "basics-09-vpc-network-subnet-route-dan-firewall-rule",
+    "title": "VPC Network, Subnet, Route, dan Firewall Rule",
+    "category": "networking",
+    "text": "VPC network: Resource global yang terdiri dari kumpulan subnet regional di seluruh dunia, terhubung melalui jaringan global Google; terisolasi logis dari VPC lain (GCE-010). VPC dapat dibagikan lintas project melalui Shared VPC, atau dihubungkan antar-VPC melalui VPC Network Peering (GCE-010). Subnet: Bersifat regional; menyediakan rentang IP untuk resource (VM, GKE cluster) di region tersebut (GCE-010).",
+    "url": "https://docs.cloud.google.com/vpc/docs/overview",
+    "source_ids": [
+      "GCE-010",
+      "GCE-012",
+      "GCE-011",
+      "GCE-028"
+    ]
+  },
+  {
+    "chunk_id": "basics-09-vpc-network-subnet-route-dan-firewall-rule::chunk-02",
+    "document_id": "basics-09-vpc-network-subnet-route-dan-firewall-rule",
+    "title": "VPC Network, Subnet, Route, dan Firewall Rule",
+    "category": "networking",
+    "text": "VPC network: Resource global yang terdiri dari kumpulan subnet regional di seluruh dunia, terhubung melalui jaringan global Google; terisolasi logis dari VPC lain (GCE-010). VPC dapat dibagikan lintas project melalui Shared VPC, atau dihubungkan antar-VPC melalui VPC Network Peering (GCE-010). Subnet: Bersifat regional; menyediakan rentang IP untuk resource (VM, GKE cluster) di region tersebut (GCE-010). Route: Mendefinisikan jalur traffic dari VM ke destinasi, berupa pasangan destination prefix (CIDR) dan next hop (GCE-012). Google Cloud otomatis menambahkan default route 0.0.0.0/0 (dan ::/0 untuk IPv6) dengan next hop default-internet-gateway, diperlukan agar VM dengan external IP, Cloud NAT, dan beberapa Google API dapat dijangkau (GCE-012). Urutan evaluasi routing: special routing paths → policy-based routes → subnet routes → custom routes (static/dynamic); jika tidak ada route yang cocok, paket di-drop (GCE-012).",
+    "url": "https://docs.cloud.google.com/vpc/docs/overview",
+    "source_ids": [
+      "GCE-010",
+      "GCE-012",
+      "GCE-011",
+      "GCE-028"
+    ]
+  },
+  {
+    "chunk_id": "basics-09-vpc-network-subnet-route-dan-firewall-rule::chunk-03",
+    "document_id": "basics-09-vpc-network-subnet-route-dan-firewall-rule",
+    "title": "VPC Network, Subnet, Route, dan Firewall Rule",
+    "category": "networking",
+    "text": "Route: Mendefinisikan jalur traffic dari VM ke destinasi, berupa pasangan destination prefix (CIDR) dan next hop (GCE-012). Google Cloud otomatis menambahkan default route 0.0.0.0/0 (dan ::/0 untuk IPv6) dengan next hop default-internet-gateway, diperlukan agar VM dengan external IP, Cloud NAT, dan beberapa Google API dapat dijangkau (GCE-012). Urutan evaluasi routing: special routing paths → policy-based routes → subnet routes → custom routes (static/dynamic); jika tidak ada route yang cocok, paket di-drop (GCE-012). Firewall rule: Mengontrol traffic ingress (masuk) dan egress (keluar) secara terpisah (satu rule hanya untuk satu arah). Parameter utama: priority (0–65535, default 1000; makin kecil makin diprioritaskan), target (semua instance / network tag / service account), source (ingress) atau destination (egress, default 0.0.0.0/0), dan action (allow/deny) (GCE-011). VPC default (auto mode) memiliki 4 rule bawaan: default-allow-internal, default-allow-ssh (TCP 22 dari mana saja), default-allow-rdp (TCP 3389 dari mana saja), default-allow-icmp — seluruhnya dapat dihapus/diubah, sehingga tidak boleh diasumsikan selalu ada pada project/VPC tertentu (GCE-011). Compute Engine secara default hanya mengizinkan traffic yang secara eksplisit diizinkan firewall rule project (GCE-028).",
+    "url": "https://docs.cloud.google.com/vpc/docs/overview",
+    "source_ids": [
+      "GCE-010",
+      "GCE-012",
+      "GCE-011",
+      "GCE-028"
+    ]
+  },
+  {
+    "chunk_id": "basics-09-vpc-network-subnet-route-dan-firewall-rule::chunk-04",
+    "document_id": "basics-09-vpc-network-subnet-route-dan-firewall-rule",
+    "title": "VPC Network, Subnet, Route, dan Firewall Rule",
+    "category": "networking",
+    "text": "Firewall rule: Mengontrol traffic ingress (masuk) dan egress (keluar) secara terpisah (satu rule hanya untuk satu arah). Parameter utama: priority (0–65535, default 1000; makin kecil makin diprioritaskan), target (semua instance / network tag / service account), source (ingress) atau destination (egress, default 0.0.0.0/0), dan action (allow/deny) (GCE-011). VPC default (auto mode) memiliki 4 rule bawaan: default-allow-internal, default-allow-ssh (TCP 22 dari mana saja), default-allow-rdp (TCP 3389 dari mana saja), default-allow-icmp — seluruhnya dapat dihapus/diubah, sehingga tidak boleh diasumsikan selalu ada pada project/VPC tertentu (GCE-011). Compute Engine secara default hanya mengizinkan traffic yang secara eksplisit diizinkan firewall rule project (GCE-028). Mengapa penting saat troubleshooting? VPC/subnet/route/firewall adalah lapisan pertama yang diperiksa untuk hampir semua gejala konektivitas: SSH/RDP gagal, tidak ada akses internet, dan \"firewall memblokir koneksi\" — lihat matriks di troubleshooting_topics.md.",
+    "url": "https://docs.cloud.google.com/vpc/docs/overview",
+    "source_ids": [
+      "GCE-010",
+      "GCE-012",
+      "GCE-011",
+      "GCE-028"
+    ]
+  },
+  {
+    "chunk_id": "basics-10-service-account-yang-digunakan-vm::chunk-01",
+    "document_id": "basics-10-service-account-yang-digunakan-vm",
+    "title": "Service Account yang Digunakan VM",
+    "category": "iam_permission",
+    "text": "Definisi: Akun khusus yang dipakai aplikasi/workload (bukan manusia) untuk autentikasi ke Google Cloud API (GCE-014). Setiap project memiliki default service account berformat PROJECT_NUMBER-compute@developer.gserviceaccount.com, yang otomatis terpasang ke VM yang dibuat lewat gcloud CLI/Console kecuali ditentukan lain (GCE-014). Access scope: Mengatur OAuth scope default untuk request dari dalam VM; scope membatasi lebih lanjut akses API di atas apa yang sudah diizinkan IAM. Praktik yang umum disebutkan dokumentasi: memberi scope cloud-platform penuh pada instance, lalu mengatur akses sebenarnya melalui IAM role (GCE-014).",
+    "url": "https://docs.cloud.google.com/compute/docs/access/service-accounts",
+    "source_ids": [
+      "GCE-014"
+    ]
+  },
+  {
+    "chunk_id": "basics-10-service-account-yang-digunakan-vm::chunk-02",
+    "document_id": "basics-10-service-account-yang-digunakan-vm",
+    "title": "Service Account yang Digunakan VM",
+    "category": "iam_permission",
+    "text": "Access scope: Mengatur OAuth scope default untuk request dari dalam VM; scope membatasi lebih lanjut akses API di atas apa yang sudah diizinkan IAM. Praktik yang umum disebutkan dokumentasi: memberi scope cloud-platform penuh pada instance, lalu mengatur akses sebenarnya melalui IAM role (GCE-014). Dua lapis kontrol akses: Akses API dari VM memerlukan baik IAM role yang memadai maupun access scope yang mengizinkan — kedua-duanya harus mengizinkan, bukan salah satu saja (GCE-014). Mengapa penting saat troubleshooting? Kasus \"VM tidak bisa mengakses API/resource Google Cloud lain\" (mis. Cloud Storage) harus diperiksa dari dua sisi: IAM role pada service account DAN access scope VM — kegagalan salah satunya cukup untuk memblokir akses.",
+    "url": "https://docs.cloud.google.com/compute/docs/access/service-accounts",
+    "source_ids": [
+      "GCE-014"
+    ]
+  },
+  {
+    "chunk_id": "basics-11-iam-role-permission-dan-prinsip-least-privilege::chunk-01",
+    "document_id": "basics-11-iam-role-permission-dan-prinsip-least-privilege",
+    "title": "IAM Role, Permission, dan Prinsip Least Privilege",
+    "category": "iam_permission",
+    "text": "Komponen IAM (GCE-015): - Principal — identitas yang diberi akses (pengguna, grup, service account). - Permission — operasi spesifik dalam format service.resource.verb (contoh: resourcemanager.projects.list); tidak diberikan langsung ke principal. - Role — kumpulan permission; tiga tipe: predefined (dikelola Google), custom (dibuat sendiri), basic/primitive (untuk testing, sangat luas cakupannya) (GCE-016). - Policy (allow policy) — objek YAML/JSON yang mengikat principal ke role pada resource tertentu (role binding), dengan mekanisme pewarisan dari resource induk (GCE-015).",
+    "url": "https://docs.cloud.google.com/iam/docs/overview",
+    "source_ids": [
+      "GCE-015",
+      "GCE-016",
+      "GCE-020",
+      "GCE-021"
+    ]
+  },
+  {
+    "chunk_id": "basics-11-iam-role-permission-dan-prinsip-least-privilege::chunk-02",
+    "document_id": "basics-11-iam-role-permission-dan-prinsip-least-privilege",
+    "title": "IAM Role, Permission, dan Prinsip Least Privilege",
+    "category": "iam_permission",
+    "text": "- Policy (allow policy) — objek YAML/JSON yang mengikat principal ke role pada resource tertentu (role binding), dengan mekanisme pewarisan dari resource induk (GCE-015). Contoh role terkait Compute Engine (GCE-016) — _nama role sesuai konvensi resmi; daftar permission detail per role perlu dicek langsung di halaman IAM roles Compute Engine bila presisi tinggi diperlukan, lihat research_notes.md_: - roles/compute.admin — kontrol penuh atas resource Compute Engine. - roles/compute.instanceAdmin — manajemen instance dengan cakupan lebih sempit dari admin penuh. - roles/compute.viewer — akses baca saja. - roles/iam.serviceAccountUser — mengizinkan impersonasi/penggunaan service account. - roles/compute.osLogin — login OS Login tanpa sudo.",
+    "url": "https://docs.cloud.google.com/iam/docs/overview",
+    "source_ids": [
+      "GCE-015",
+      "GCE-016",
+      "GCE-020",
+      "GCE-021"
+    ]
+  },
+  {
+    "chunk_id": "basics-11-iam-role-permission-dan-prinsip-least-privilege::chunk-03",
+    "document_id": "basics-11-iam-role-permission-dan-prinsip-least-privilege",
+    "title": "IAM Role, Permission, dan Prinsip Least Privilege",
+    "category": "iam_permission",
+    "text": "- roles/compute.viewer — akses baca saja. - roles/iam.serviceAccountUser — mengizinkan impersonasi/penggunaan service account. - roles/compute.osLogin — login OS Login tanpa sudo. - roles/compute.osAdminLogin — login OS Login dengan sudo (GCE-020). - roles/iap.tunnelResourceAccessor — akses tunnel IAP TCP forwarding (GCE-021). Least privilege: Prinsipnya adalah memberi principal hanya permission minimum yang dibutuhkan, lebih disarankan menggunakan predefined/custom role yang tepat sasaran dibanding basic role (Owner/Editor/Viewer) yang terlalu luas.",
+    "url": "https://docs.cloud.google.com/iam/docs/overview",
+    "source_ids": [
+      "GCE-015",
+      "GCE-016",
+      "GCE-020",
+      "GCE-021"
+    ]
+  },
+  {
+    "chunk_id": "basics-11-iam-role-permission-dan-prinsip-least-privilege::chunk-04",
+    "document_id": "basics-11-iam-role-permission-dan-prinsip-least-privilege",
+    "title": "IAM Role, Permission, dan Prinsip Least Privilege",
+    "category": "iam_permission",
+    "text": "Least privilege: Prinsipnya adalah memberi principal hanya permission minimum yang dibutuhkan, lebih disarankan menggunakan predefined/custom role yang tepat sasaran dibanding basic role (Owner/Editor/Viewer) yang terlalu luas. Mengapa penting saat troubleshooting? Kasus \"permission denied\" harus diuraikan menjadi: siapa principal-nya, resource apa yang diakses, permission apa yang dibutuhkan, dan role apa yang sudah/belum diberikan — bukan sekadar menyarankan pemberian role admin/Owner secara umum (lihat troubleshooting_topics.md).",
+    "url": "https://docs.cloud.google.com/iam/docs/overview",
+    "source_ids": [
+      "GCE-015",
+      "GCE-016",
+      "GCE-020",
+      "GCE-021"
+    ]
+  },
+  {
+    "chunk_id": "basics-12-quota-dan-perbedaan-dengan-ketersediaan-resource-zonal::chunk-01",
+    "document_id": "basics-12-quota-dan-perbedaan-dengan-ketersediaan-resource-zonal",
+    "title": "Quota dan Perbedaan dengan Ketersediaan Resource Zonal",
+    "category": "quota",
+    "text": "Quota: Batas maksimum jumlah resource yang boleh dibuat (GCE-017). Quota VM dan CPU umumnya bersifat regional; beberapa akun memiliki quota global \"CPUs (All Regions)\". Quota jaringan dan load balancing bersifat global. Setiap machine type memiliki pool quota CPU sendiri, kecuali kelompok tertentu yang berbagi pool (contoh: E2 dan N1 berbagi pool CPU) (GCE-017). Selain quota resource, ada pula concurrent operation quota — batas jumlah operasi API yang berjalan bersamaan, menghasilkan error rateLimitExceeded yang sama sekali berbeda dari quota resource (GCE-029). Perbedaan krusial — Quota vs Resource Availability (GCE-017, GCE-026):",
+    "url": "https://docs.cloud.google.com/compute/quotas",
+    "source_ids": [
+      "GCE-017",
+      "GCE-029",
+      "GCE-026"
+    ]
+  },
+  {
+    "chunk_id": "basics-12-quota-dan-perbedaan-dengan-ketersediaan-resource-zonal::chunk-02",
+    "document_id": "basics-12-quota-dan-perbedaan-dengan-ketersediaan-resource-zonal",
+    "title": "Quota dan Perbedaan dengan Ketersediaan Resource Zonal",
+    "category": "quota",
+    "text": "Quota: Batas maksimum jumlah resource yang boleh dibuat (GCE-017). Quota VM dan CPU umumnya bersifat regional; beberapa akun memiliki quota global \"CPUs (All Regions)\". Quota jaringan dan load balancing bersifat global. Setiap machine type memiliki pool quota CPU sendiri, kecuali kelompok tertentu yang berbagi pool (contoh: E2 dan N1 berbagi pool CPU) (GCE-017). Selain quota resource, ada pula concurrent operation quota — batas jumlah operasi API yang berjalan bersamaan, menghasilkan error rateLimitExceeded yang sama sekali berbeda dari quota resource (GCE-029). Perbedaan krusial — Quota vs Resource Availability (GCE-017, GCE-026): > \"Allocation quotas are the maximum number of resources you can create of that resource type, if those resources are available. Quotas don't guarantee that resources are always available.\" (GCE-017)",
+    "url": "https://docs.cloud.google.com/compute/quotas",
+    "source_ids": [
+      "GCE-017",
+      "GCE-029",
+      "GCE-026"
+    ]
+  },
+  {
+    "chunk_id": "basics-12-quota-dan-perbedaan-dengan-ketersediaan-resource-zonal::chunk-03",
+    "document_id": "basics-12-quota-dan-perbedaan-dengan-ketersediaan-resource-zonal",
+    "title": "Quota dan Perbedaan dengan Ketersediaan Resource Zonal",
+    "category": "quota",
+    "text": "> \"Allocation quotas are the maximum number of resources you can create of that resource type, if those resources are available. Quotas don't guarantee that resources are always available.\" (GCE-017) - Quota exceeded — batas akun/project tercapai; solusi: request peningkatan quota (tidak tersedia untuk akun Free Trial) (GCE-017). - Resource availability error (ZONE_RESOURCE_POOL_EXHAUSTED dan variannya seperti cpu_availability, memory_availability, local_ssd_availability, gpu_availability) — kapasitas fisik zone tersebut sedang habis, bukan masalah quota; solusi: coba zone/region lain, ubah konfigurasi (machine series, jumlah Local SSD/GPU), gunakan Flex-start/Spot VM, atau buat reservation terlebih dahulu (GCE-026).",
+    "url": "https://docs.cloud.google.com/compute/quotas",
+    "source_ids": [
+      "GCE-017",
+      "GCE-029",
+      "GCE-026"
+    ]
+  },
+  {
+    "chunk_id": "basics-12-quota-dan-perbedaan-dengan-ketersediaan-resource-zonal::chunk-04",
+    "document_id": "basics-12-quota-dan-perbedaan-dengan-ketersediaan-resource-zonal",
+    "title": "Quota dan Perbedaan dengan Ketersediaan Resource Zonal",
+    "category": "quota",
+    "text": "- Resource availability error (ZONE_RESOURCE_POOL_EXHAUSTED dan variannya seperti cpu_availability, memory_availability, local_ssd_availability, gpu_availability) — kapasitas fisik zone tersebut sedang habis, bukan masalah quota; solusi: coba zone/region lain, ubah konfigurasi (machine series, jumlah Local SSD/GPU), gunakan Flex-start/Spot VM, atau buat reservation terlebih dahulu (GCE-026). Mengapa penting saat troubleshooting? Kedua kondisi ini menghasilkan kegagalan create/start VM yang terasa mirip bagi pengguna, tetapi jalur diagnosis dan solusinya berbeda — agent tidak boleh menyamakan keduanya (lihat troubleshooting_topics.md, topik \"Quota exceeded\" dan \"VM gagal dibuat atau start\").",
+    "url": "https://docs.cloud.google.com/compute/quotas",
+    "source_ids": [
+      "GCE-017",
+      "GCE-029",
+      "GCE-026"
+    ]
+  },
+  {
+    "chunk_id": "ts-01-vm-gagal-dibuat-atau-start::chunk-01",
+    "document_id": "ts-01-vm-gagal-dibuat-atau-start",
+    "title": "VM Gagal Dibuat atau Start",
+    "category": "vm_lifecycle",
+    "text": "Gejala/contoh error: Quota QUOTA_NAME exceeded. Limit: QUOTA_LIMIT in region REGION; ZONE_RESOURCE_POOL_EXHAUSTED; notFound/does not exist in zone; Required 'compute.regions.get' permission...; instance tetap di status TERMINATED setelah mencoba start (GCE-025, GCE-026, GCE-005). Pertanyaan klarifikasi: Apakah ini pembuatan VM baru atau start VM yang sudah ada? Machine type, image, zone/region yang dipilih? Pesan error lengkap (teks persis)? Apakah baru pertama kali dibuat di project ini atau sebelumnya pernah berhasil? Kemungkinan penyebab (hipotesis, bukan urutan pasti): - Quota project/region habis (CPU, VM, IP, disk) — GCE-017, GCE-025.",
+    "url": "https://docs.cloud.google.com/compute/docs/troubleshooting/troubleshooting-vm-creation",
+    "source_ids": [
+      "GCE-025",
+      "GCE-026",
+      "GCE-005",
+      "GCE-017",
+      "GCE-027",
+      "GCE-002",
+      "GCE-022"
+    ]
+  },
+  {
+    "chunk_id": "ts-01-vm-gagal-dibuat-atau-start::chunk-02",
+    "document_id": "ts-01-vm-gagal-dibuat-atau-start",
+    "title": "VM Gagal Dibuat atau Start",
+    "category": "vm_lifecycle",
+    "text": "Pertanyaan klarifikasi: Apakah ini pembuatan VM baru atau start VM yang sudah ada? Machine type, image, zone/region yang dipilih? Pesan error lengkap (teks persis)? Apakah baru pertama kali dibuat di project ini atau sebelumnya pernah berhasil? Kemungkinan penyebab (hipotesis, bukan urutan pasti): - Quota project/region habis (CPU, VM, IP, disk) — GCE-017, GCE-025. - Ketersediaan kapasitas fisik zone habis (ZONE_RESOURCE_POOL_EXHAUSTED dan varian cpu_availability, memory_availability, local_ssd_availability, gpu_availability) — GCE-026. - Zone yang dipilih tidak menyediakan machine type/konfigurasi tersebut — GCE-025. - IAM permission tidak memadai untuk principal yang membuat VM — GCE-025.",
+    "url": "https://docs.cloud.google.com/compute/docs/troubleshooting/troubleshooting-vm-creation",
+    "source_ids": [
+      "GCE-025",
+      "GCE-026",
+      "GCE-005",
+      "GCE-017",
+      "GCE-027",
+      "GCE-002",
+      "GCE-022"
+    ]
+  },
+  {
+    "chunk_id": "ts-01-vm-gagal-dibuat-atau-start::chunk-03",
+    "document_id": "ts-01-vm-gagal-dibuat-atau-start",
+    "title": "VM Gagal Dibuat atau Start",
+    "category": "vm_lifecycle",
+    "text": "- Zone yang dipilih tidak menyediakan machine type/konfigurasi tersebut — GCE-025. - IAM permission tidak memadai untuk principal yang membuat VM — GCE-025. - Nama resource bentrok (duplicate name), jumlah NIC melebihi batas machine type, atau CPU platform tidak kompatibel — GCE-025. - Boot disk penuh/filesystem corrupt/MBR invalid (khusus kasus \"start\" VM lama yang gagal) — GCE-027. Pemeriksaan aman (paling tidak invasif dahulu): 1. Baca ulang pesan error lengkap bersama pengguna — teks error GCP biasanya menyebut reason (quota vs resource_availability) secara eksplisit (GCE-017, GCE-026). 2. Minta pengguna memeriksa halaman Quotas (read-only) untuk resource terkait region tersebut.",
+    "url": "https://docs.cloud.google.com/compute/docs/troubleshooting/troubleshooting-vm-creation",
+    "source_ids": [
+      "GCE-025",
+      "GCE-026",
+      "GCE-005",
+      "GCE-017",
+      "GCE-027",
+      "GCE-002",
+      "GCE-022"
+    ]
+  },
+  {
+    "chunk_id": "ts-01-vm-gagal-dibuat-atau-start::chunk-04",
+    "document_id": "ts-01-vm-gagal-dibuat-atau-start",
+    "title": "VM Gagal Dibuat atau Start",
+    "category": "vm_lifecycle",
+    "text": "1. Baca ulang pesan error lengkap bersama pengguna — teks error GCP biasanya menyebut reason (quota vs resource_availability) secara eksplisit (GCE-017, GCE-026). 2. Minta pengguna memeriksa halaman Quotas (read-only) untuk resource terkait region tersebut. 3. Minta pengguna memeriksa status instance (RUNNING/TERMINATED/REPAIRING) via Console tanpa mengubah apa pun. Langkah diagnosis bertahap: 1. Jika error menyebut QUOTA_EXCEEDED/rateLimitExceeded → arahkan ke topik 8 (Quota exceeded). 2. Jika error menyebut ZONE_RESOURCE_POOL_EXHAUSTED atau sejenis → ini bukan quota; sarankan opsi non-destruktif: coba zone lain dalam region yang sama, kurangi spesifikasi (vCPU/Local SSD/GPU), atau pertimbangkan Flex-start/Spot VM (GCE-026).",
+    "url": "https://docs.cloud.google.com/compute/docs/troubleshooting/troubleshooting-vm-creation",
+    "source_ids": [
+      "GCE-025",
+      "GCE-026",
+      "GCE-005",
+      "GCE-017",
+      "GCE-027",
+      "GCE-002",
+      "GCE-022"
+    ]
+  },
+  {
+    "chunk_id": "ts-01-vm-gagal-dibuat-atau-start::chunk-05",
+    "document_id": "ts-01-vm-gagal-dibuat-atau-start",
+    "title": "VM Gagal Dibuat atau Start",
+    "category": "vm_lifecycle",
+    "text": "2. Jika error menyebut ZONE_RESOURCE_POOL_EXHAUSTED atau sejenis → ini bukan quota; sarankan opsi non-destruktif: coba zone lain dalam region yang sama, kurangi spesifikasi (vCPU/Local SSD/GPU), atau pertimbangkan Flex-start/Spot VM (GCE-026). 3. Jika error permission → arahkan ke topik 7 (Permission denied); identifikasi principal dan permission yang hilang. 4. Jika ini kasus \"start\" VM lama yang gagal (bukan create baru) dan status tetap TERMINATED → periksa kemungkinan boot disk penuh atau filesystem corrupt via serial console (lihat topik 11, Masalah startup), bukan langsung restart paksa berulang. Solusi/workaround: - Quota: ajukan permintaan peningkatan quota resmi via Console (tidak tersedia untuk akun Free Trial) — GCE-017.",
+    "url": "https://docs.cloud.google.com/compute/docs/troubleshooting/troubleshooting-vm-creation",
+    "source_ids": [
+      "GCE-025",
+      "GCE-026",
+      "GCE-005",
+      "GCE-017",
+      "GCE-027",
+      "GCE-002",
+      "GCE-022"
+    ]
+  },
+  {
+    "chunk_id": "ts-01-vm-gagal-dibuat-atau-start::chunk-06",
+    "document_id": "ts-01-vm-gagal-dibuat-atau-start",
+    "title": "VM Gagal Dibuat atau Start",
+    "category": "vm_lifecycle",
+    "text": "4. Jika ini kasus \"start\" VM lama yang gagal (bukan create baru) dan status tetap TERMINATED → periksa kemungkinan boot disk penuh atau filesystem corrupt via serial console (lihat topik 11, Masalah startup), bukan langsung restart paksa berulang. Solusi/workaround: - Quota: ajukan permintaan peningkatan quota resmi via Console (tidak tersedia untuk akun Free Trial) — GCE-017. - Resource availability: coba zone/region lain, ubah konfigurasi, atau buat reservation terlebih dahulu sebagai langkah preventif — GCE-026. - Permission: minta administrator project memberi role yang sesuai prinsip least privilege (lihat topik 7).",
+    "url": "https://docs.cloud.google.com/compute/docs/troubleshooting/troubleshooting-vm-creation",
+    "source_ids": [
+      "GCE-025",
+      "GCE-026",
+      "GCE-005",
+      "GCE-017",
+      "GCE-027",
+      "GCE-002",
+      "GCE-022"
+    ]
+  },
+  {
+    "chunk_id": "ts-01-vm-gagal-dibuat-atau-start::chunk-07",
+    "document_id": "ts-01-vm-gagal-dibuat-atau-start",
+    "title": "VM Gagal Dibuat atau Start",
+    "category": "vm_lifecycle",
+    "text": "- Resource availability: coba zone/region lain, ubah konfigurasi, atau buat reservation terlebih dahulu sebagai langkah preventif — GCE-026. - Permission: minta administrator project memberi role yang sesuai prinsip least privilege (lihat topik 7). Risiko/catatan: Jangan menyamakan quota exceeded dengan resource availability — jalur solusinya berbeda (GCE-017, GCE-026). Mengubah machine type pada instance yang sudah ada bisa memicu masalah boot terpisah (lihat known issue regenerasi initramfs SUSE, migrasi Gen1/2→Gen3 Windows — GCE-002); perubahan konfigurasi apa pun pada instance yang sudah ada perlu konfirmasi pengguna karena berisiko downtime. Verifikasi: Instance berhasil mencapai status RUNNING dan dapat diakses (SSH/RDP) sesuai metode yang digunakan.",
+    "url": "https://docs.cloud.google.com/compute/docs/troubleshooting/troubleshooting-vm-creation",
+    "source_ids": [
+      "GCE-025",
+      "GCE-026",
+      "GCE-005",
+      "GCE-017",
+      "GCE-027",
+      "GCE-002",
+      "GCE-022"
+    ]
+  },
+  {
+    "chunk_id": "ts-01-vm-gagal-dibuat-atau-start::chunk-08",
+    "document_id": "ts-01-vm-gagal-dibuat-atau-start",
+    "title": "VM Gagal Dibuat atau Start",
+    "category": "vm_lifecycle",
+    "text": "Risiko/catatan: Jangan menyamakan quota exceeded dengan resource availability — jalur solusinya berbeda (GCE-017, GCE-026). Mengubah machine type pada instance yang sudah ada bisa memicu masalah boot terpisah (lihat known issue regenerasi initramfs SUSE, migrasi Gen1/2→Gen3 Windows — GCE-002); perubahan konfigurasi apa pun pada instance yang sudah ada perlu konfirmasi pengguna karena berisiko downtime. Verifikasi: Instance berhasil mencapai status RUNNING dan dapat diakses (SSH/RDP) sesuai metode yang digunakan. Eskalasi/alternatif: Jika resource availability terus terjadi di berbagai zone/region, atau jika pesan error tidak cocok dengan pola di atas, arahkan ke Google Cloud Support. Sumber: GCE-005, GCE-017, GCE-022, GCE-025, GCE-026, GCE-002.",
+    "url": "https://docs.cloud.google.com/compute/docs/troubleshooting/troubleshooting-vm-creation",
+    "source_ids": [
+      "GCE-025",
+      "GCE-026",
+      "GCE-005",
+      "GCE-017",
+      "GCE-027",
+      "GCE-002",
+      "GCE-022"
+    ]
+  },
+  {
+    "chunk_id": "ts-02-vm-tidak-bisa-diakses-umum::chunk-01",
+    "document_id": "ts-02-vm-tidak-bisa-diakses-umum",
+    "title": "VM Tidak Bisa Diakses (Umum)",
+    "category": "general_troubleshooting",
+    "text": "Gejala/contoh error: VM tidak merespons ping/SSH/RDP/HTTP; Console menunjukkan status RUNNING tetapi tidak ada respons apa pun. Pertanyaan klarifikasi: Metode akses apa yang gagal (SSH, RDP, HTTP aplikasi, ICMP)? Apakah pernah berhasil sebelumnya dan kapan terakhir berhasil? Perubahan konfigurasi terakhir (firewall, startup script, resize, machine type)? Apakah VM punya external IP atau diakses via IAP/VPN? Kemungkinan penyebab: Kombinasi dari kategori berbeda — ini adalah gejala \"payung\" yang harus dipecah ke topik lebih spesifik: status VM (lihat basics 3.2), firewall rule (topik 6), routing/IP (basics 3.8–3.9), autentikasi (topik 3/4), atau VM benar-benar unresponsive di dalam guest OS (topik 11). Pemeriksaan aman: 1. Periksa status instance di Console (read-only).",
+    "url": "https://docs.cloud.google.com/compute/docs/troubleshooting/vm-startup",
+    "source_ids": [
+      "GCE-027",
+      "GCE-001",
+      "GCE-028",
+      "GCE-025",
+      "GCE-005",
+      "GCE-022"
+    ]
+  },
+  {
+    "chunk_id": "ts-02-vm-tidak-bisa-diakses-umum::chunk-02",
+    "document_id": "ts-02-vm-tidak-bisa-diakses-umum",
+    "title": "VM Tidak Bisa Diakses (Umum)",
+    "category": "general_troubleshooting",
+    "text": "Kemungkinan penyebab: Kombinasi dari kategori berbeda — ini adalah gejala \"payung\" yang harus dipecah ke topik lebih spesifik: status VM (lihat basics 3.2), firewall rule (topik 6), routing/IP (basics 3.8–3.9), autentikasi (topik 3/4), atau VM benar-benar unresponsive di dalam guest OS (topik 11). Pemeriksaan aman: 1. Periksa status instance di Console (read-only). 2. Periksa VM screenshot/serial console output untuk melihat tahap boot (read-only, tidak mengubah apa pun) — GCE-027, GCE-001. 3. Periksa firewall rule dan route yang berlaku untuk NIC tersebut (read-only) — GCE-028. Langkah diagnosis bertahap: 1. Jika status bukan RUNNING → rujuk topik 1. 2. Jika status RUNNING tetapi serial console tidak menunjukkan aktivitas/boot selesai → rujuk topik 11 (Masalah startup).",
+    "url": "https://docs.cloud.google.com/compute/docs/troubleshooting/vm-startup",
+    "source_ids": [
+      "GCE-027",
+      "GCE-001",
+      "GCE-028",
+      "GCE-025",
+      "GCE-005",
+      "GCE-022"
+    ]
+  },
+  {
+    "chunk_id": "ts-02-vm-tidak-bisa-diakses-umum::chunk-03",
+    "document_id": "ts-02-vm-tidak-bisa-diakses-umum",
+    "title": "VM Tidak Bisa Diakses (Umum)",
+    "category": "general_troubleshooting",
+    "text": "1. Jika status bukan RUNNING → rujuk topik 1. 2. Jika status RUNNING tetapi serial console tidak menunjukkan aktivitas/boot selesai → rujuk topik 11 (Masalah startup). 3. Jika boot tampak selesai tetapi tidak ada respons jaringan sama sekali (termasuk dari internal network) → rujuk topik 12 (Masalah konfigurasi jaringan) dan topik 6 (Firewall). 4. Jika hanya SSH/RDP yang gagal sementara jaringan lain normal → rujuk topik 3/4. Solusi/workaround: Tergantung topik spesifik hasil triase di atas — lihat topik terkait.",
+    "url": "https://docs.cloud.google.com/compute/docs/troubleshooting/vm-startup",
+    "source_ids": [
+      "GCE-027",
+      "GCE-001",
+      "GCE-028",
+      "GCE-025",
+      "GCE-005",
+      "GCE-022"
+    ]
+  },
+  {
+    "chunk_id": "ts-02-vm-tidak-bisa-diakses-umum::chunk-04",
+    "document_id": "ts-02-vm-tidak-bisa-diakses-umum",
+    "title": "VM Tidak Bisa Diakses (Umum)",
+    "category": "general_troubleshooting",
+    "text": "4. Jika hanya SSH/RDP yang gagal sementara jaringan lain normal → rujuk topik 3/4. Solusi/workaround: Tergantung topik spesifik hasil triase di atas — lihat topik terkait. Risiko/catatan: Jangan langsung menyimpulkan \"VM mati\" dan menyarankan restart sebagai langkah pertama; restart dapat menutupi bukti diagnostik di serial console dan berisiko bila ada operasi disk yang sedang berjalan (GCE-025 menyebut operasi clone/snapshot aktif dapat memblokir start). Verifikasi: Metode akses yang semula gagal kini berhasil secara konsisten (bukan hanya sekali). Eskalasi/alternatif: Jika triase di atas tidak menemukan kecocokan pola gejala, arahkan ke Google Cloud Support dengan menyertakan serial console log (tanpa data sensitif) dan connectivity test result.",
+    "url": "https://docs.cloud.google.com/compute/docs/troubleshooting/vm-startup",
+    "source_ids": [
+      "GCE-027",
+      "GCE-001",
+      "GCE-028",
+      "GCE-025",
+      "GCE-005",
+      "GCE-022"
+    ]
+  },
+  {
+    "chunk_id": "ts-02-vm-tidak-bisa-diakses-umum::chunk-05",
+    "document_id": "ts-02-vm-tidak-bisa-diakses-umum",
+    "title": "VM Tidak Bisa Diakses (Umum)",
+    "category": "general_troubleshooting",
+    "text": "Eskalasi/alternatif: Jika triase di atas tidak menemukan kecocokan pola gejala, arahkan ke Google Cloud Support dengan menyertakan serial console log (tanpa data sensitif) dan connectivity test result. Sumber: GCE-001, GCE-005, GCE-027, GCE-028, GCE-022.",
+    "url": "https://docs.cloud.google.com/compute/docs/troubleshooting/vm-startup",
+    "source_ids": [
+      "GCE-027",
+      "GCE-001",
+      "GCE-028",
+      "GCE-025",
+      "GCE-005",
+      "GCE-022"
+    ]
+  },
+  {
+    "chunk_id": "ts-03-ssh-gagal::chunk-01",
+    "document_id": "ts-03-ssh-gagal",
+    "title": "SSH Gagal",
+    "category": "ssh_rdp",
+    "text": "Gejala/contoh error: Permission denied (publickey); Could not connect, retrying...; SSH-in-Browser Unauthorized Error 401 (GCE-018). Pertanyaan klarifikasi: OS Linux apa/image apa? Metode koneksi (gcloud CLI, SSH-in-Browser/Console, IAP tunnel, SSH client manual)? Apakah OS Login diaktifkan di project/instance? Pesan error persis? Apakah pengguna bagian dari organisasi Google Workspace? Kemungkinan penyebab (GCE-018): - Ketidakcocokan metode kunci: memakai metadata SSH key pada VM dengan OS Login aktif, atau sebaliknya. - Principal tidak memiliki IAM role OS Login (roles/compute.osLogin / roles/compute.osAdminLogin) — lihat basics 3.11. - Mencoba login dengan akun lokal non-Google pada VM yang memakai OS Login. - Proses boot belum selesai, atau VM boot ke emergency mode.",
+    "url": "https://docs.cloud.google.com/compute/docs/troubleshooting/troubleshooting-ssh-errors",
+    "source_ids": [
+      "GCE-018",
+      "GCE-011",
+      "GCE-021",
+      "GCE-020",
+      "GCE-001"
+    ]
+  },
+  {
+    "chunk_id": "ts-03-ssh-gagal::chunk-02",
+    "document_id": "ts-03-ssh-gagal",
+    "title": "SSH Gagal",
+    "category": "ssh_rdp",
+    "text": "- Principal tidak memiliki IAM role OS Login (roles/compute.osLogin / roles/compute.osAdminLogin) — lihat basics 3.11. - Mencoba login dengan akun lokal non-Google pada VM yang memakai OS Login. - Proses boot belum selesai, atau VM boot ke emergency mode. - Service google-guest-agent.service tidak berjalan atau Linux Guest Agent tidak terpasang. - Tidak ada firewall rule yang mengizinkan port 22 untuk sumber yang relevan. - Disk penuh atau out-of-memory di guest OS. - Kebijakan Google Workspace membatasi akses SSH-in-Browser (error 401). Pemeriksaan aman:",
+    "url": "https://docs.cloud.google.com/compute/docs/troubleshooting/troubleshooting-ssh-errors",
+    "source_ids": [
+      "GCE-018",
+      "GCE-011",
+      "GCE-021",
+      "GCE-020",
+      "GCE-001"
+    ]
+  },
+  {
+    "chunk_id": "ts-03-ssh-gagal::chunk-03",
+    "document_id": "ts-03-ssh-gagal",
+    "title": "SSH Gagal",
+    "category": "ssh_rdp",
+    "text": "- Tidak ada firewall rule yang mengizinkan port 22 untuk sumber yang relevan. - Disk penuh atau out-of-memory di guest OS. - Kebijakan Google Workspace membatasi akses SSH-in-Browser (error 401). Pemeriksaan aman: 1. Jalankan tool diagnosis resmi: gcloud compute ssh VM_NAME --troubleshoot (opsional tambahkan --tunnel-through-iap bila akses via IAP) — tool ini memeriksa izin IAM, konektivitas jaringan, status CPU VM, dan firewall port SSH tanpa mengubah konfigurasi (GCE-018). 2. Periksa status OS Login pada project/instance metadata (read-only). 3. Periksa firewall rule yang berlaku untuk port 22 (read-only) — GCE-011, GCE-018. Langkah diagnosis bertahap: 1. Jalankan --troubleshoot dan catat bagian mana yang gagal (IAM permission, network, CPU, firewall).",
+    "url": "https://docs.cloud.google.com/compute/docs/troubleshooting/troubleshooting-ssh-errors",
+    "source_ids": [
+      "GCE-018",
+      "GCE-011",
+      "GCE-021",
+      "GCE-020",
+      "GCE-001"
+    ]
+  },
+  {
+    "chunk_id": "ts-03-ssh-gagal::chunk-04",
+    "document_id": "ts-03-ssh-gagal",
+    "title": "SSH Gagal",
+    "category": "ssh_rdp",
+    "text": "3. Periksa firewall rule yang berlaku untuk port 22 (read-only) — GCE-011, GCE-018. Langkah diagnosis bertahap: 1. Jalankan --troubleshoot dan catat bagian mana yang gagal (IAM permission, network, CPU, firewall). 2. Jika IAM permission gagal → berikan role OS Login yang sesuai sesuai least privilege. 3. Jika mismatch OS Login vs metadata key → selaraskan metode (aktifkan/nonaktifkan OS Login sesuai kebutuhan, atau pindahkan kunci ke tempat yang sesuai) — perubahan ini memengaruhi akses, informasikan dampaknya ke pengguna terlebih dulu. 4. Jika \"Could not connect, retrying\" → periksa serial console untuk status boot dan status google-guest-agent.service. 5. Jika error 401 SSH-in-Browser → ini terkait kebijakan Workspace organisasi, bukan konfigurasi VM; arahkan ke admin Workspace.",
+    "url": "https://docs.cloud.google.com/compute/docs/troubleshooting/troubleshooting-ssh-errors",
+    "source_ids": [
+      "GCE-018",
+      "GCE-011",
+      "GCE-021",
+      "GCE-020",
+      "GCE-001"
+    ]
+  },
+  {
+    "chunk_id": "ts-03-ssh-gagal::chunk-05",
+    "document_id": "ts-03-ssh-gagal",
+    "title": "SSH Gagal",
+    "category": "ssh_rdp",
+    "text": "4. Jika \"Could not connect, retrying\" → periksa serial console untuk status boot dan status google-guest-agent.service. 5. Jika error 401 SSH-in-Browser → ini terkait kebijakan Workspace organisasi, bukan konfigurasi VM; arahkan ke admin Workspace. Solusi/workaround: - Aktifkan guest agent jika disabled: systemctl enable google-guest-agent.service dan systemctl start google-guest-agent.service (perubahan pada guest OS; minta konfirmasi pengguna karena dijalankan via akses lain seperti serial console). - Tambahkan firewall rule port 22 bila memang belum ada dan pengguna memahami cakupan source range yang diizinkan (jangan sarankan 0.0.0.0/0 tanpa konteks keamanan yang jelas). - Gunakan IAP TCP forwarding sebagai alternatif bila VM tidak punya external IP (GCE-021).",
+    "url": "https://docs.cloud.google.com/compute/docs/troubleshooting/troubleshooting-ssh-errors",
+    "source_ids": [
+      "GCE-018",
+      "GCE-011",
+      "GCE-021",
+      "GCE-020",
+      "GCE-001"
+    ]
+  },
+  {
+    "chunk_id": "ts-03-ssh-gagal::chunk-06",
+    "document_id": "ts-03-ssh-gagal",
+    "title": "SSH Gagal",
+    "category": "ssh_rdp",
+    "text": "- Tambahkan firewall rule port 22 bila memang belum ada dan pengguna memahami cakupan source range yang diizinkan (jangan sarankan 0.0.0.0/0 tanpa konteks keamanan yang jelas). - Gunakan IAP TCP forwarding sebagai alternatif bila VM tidak punya external IP (GCE-021). Risiko/catatan: Menonaktifkan/mengaktifkan OS Login memengaruhi seluruh pengguna pada instance, bukan hanya satu orang — jelaskan dampak sebelum mengubah. Jangan menyarankan membuka firewall ke 0.0.0.0/0 sebagai solusi umum. Verifikasi: Re-run gcloud compute ssh VM_NAME --troubleshoot menunjukkan semua pemeriksaan lulus, dan SSH berhasil connect. Eskalasi/alternatif: Jika seluruh pemeriksaan tool troubleshoot lulus namun SSH tetap gagal, periksa lebih dalam via serial console interaktif atau eskalasi ke Google Cloud Support.",
+    "url": "https://docs.cloud.google.com/compute/docs/troubleshooting/troubleshooting-ssh-errors",
+    "source_ids": [
+      "GCE-018",
+      "GCE-011",
+      "GCE-021",
+      "GCE-020",
+      "GCE-001"
+    ]
+  },
+  {
+    "chunk_id": "ts-03-ssh-gagal::chunk-07",
+    "document_id": "ts-03-ssh-gagal",
+    "title": "SSH Gagal",
+    "category": "ssh_rdp",
+    "text": "Eskalasi/alternatif: Jika seluruh pemeriksaan tool troubleshoot lulus namun SSH tetap gagal, periksa lebih dalam via serial console interaktif atau eskalasi ke Google Cloud Support. Sumber: GCE-018, GCE-020, GCE-021, GCE-011, GCE-001.",
+    "url": "https://docs.cloud.google.com/compute/docs/troubleshooting/troubleshooting-ssh-errors",
+    "source_ids": [
+      "GCE-018",
+      "GCE-011",
+      "GCE-021",
+      "GCE-020",
+      "GCE-001"
+    ]
+  },
+  {
+    "chunk_id": "ts-04-rdp-gagal::chunk-01",
+    "document_id": "ts-04-rdp-gagal",
+    "title": "RDP Gagal",
+    "category": "ssh_rdp",
+    "text": "Gejala/contoh error: Tidak dapat connect via RDP; layar hitam/connection timeout; error lisensi RDS. Pertanyaan klarifikasi: Windows Server versi berapa (Core atau Desktop Experience)? Apakah instance baru dibuat (masih dalam proses sysprep)? Apakah menggunakan RDS dengan banyak pengguna bersamaan? Password di-generate via Console atau diatur manual? Apakah ada external IP? Kemungkinan penyebab: - Boot/sysprep belum selesai — instance baru butuh sekitar 5–10 menit sebelum siap (GCE-002, GCE-003). - Firewall tidak mengizinkan TCP port 3389 (GCE-019). - Metadata server (169.254.169.254) tidak terjangkau dari dalam guest (GCE-019). - Kredensial lokal salah/belum diset; password harus di-reset via Console/SAC, bukan ditebak (GCE-019).",
+    "url": "https://docs.cloud.google.com/compute/docs/troubleshooting/known-issues",
+    "source_ids": [
+      "GCE-002",
+      "GCE-003",
+      "GCE-019",
+      "GCE-021"
+    ]
+  },
+  {
+    "chunk_id": "ts-04-rdp-gagal::chunk-02",
+    "document_id": "ts-04-rdp-gagal",
+    "title": "RDP Gagal",
+    "category": "ssh_rdp",
+    "text": "- Metadata server (169.254.169.254) tidak terjangkau dari dalam guest (GCE-019). - Kredensial lokal salah/belum diset; password harus di-reset via Console/SAC, bukan ditebak (GCE-019). - Menggunakan Windows Server Core padahal mengharapkan antarmuka Desktop Experience (GCE-019). - RDS Client Access License (CAL) habis — gejala muncul setelah sejumlah sesi bersamaan tercapai (GCE-019). - Known issue versi/machine-type tertentu, misalnya batas vCPU Windows Server 2012/2016 pada C4/C4D/C3D, atau isu suspend/resume pada Windows Server 2025/11 24h2/25h2 (GCE-002) — berlaku kondisional, periksa versi OS dan machine type pengguna sebelum menyimpulkan. Pemeriksaan aman: 1. Periksa Serial Port 1 untuk konfirmasi \"GCEGuestAgent\" sudah berjalan (read-only) — GCE-019.",
+    "url": "https://docs.cloud.google.com/compute/docs/troubleshooting/known-issues",
+    "source_ids": [
+      "GCE-002",
+      "GCE-003",
+      "GCE-019",
+      "GCE-021"
+    ]
+  },
+  {
+    "chunk_id": "ts-04-rdp-gagal::chunk-03",
+    "document_id": "ts-04-rdp-gagal",
+    "title": "RDP Gagal",
+    "category": "ssh_rdp",
+    "text": "- Known issue versi/machine-type tertentu, misalnya batas vCPU Windows Server 2012/2016 pada C4/C4D/C3D, atau isu suspend/resume pada Windows Server 2025/11 24h2/25h2 (GCE-002) — berlaku kondisional, periksa versi OS dan machine type pengguna sebelum menyimpulkan. Pemeriksaan aman: 1. Periksa Serial Port 1 untuk konfirmasi \"GCEGuestAgent\" sudah berjalan (read-only) — GCE-019. 2. Lihat VM screenshot untuk menilai tahap boot (read-only) — GCE-019. 3. Verifikasi firewall rule mengizinkan tcp:3389 (read-only) — GCE-019. 4. Jalankan Connectivity Test di Console, atau dari workstation: curl -v telnet://DESTINATION_IP_ADDRESS:3389 (read-only, tidak mengubah resource) — GCE-019. Langkah diagnosis bertahap: 1. Jika boot belum selesai (screenshot menunjukkan sysprep) → tunggu, jangan restart paksa.",
+    "url": "https://docs.cloud.google.com/compute/docs/troubleshooting/known-issues",
+    "source_ids": [
+      "GCE-002",
+      "GCE-003",
+      "GCE-019",
+      "GCE-021"
+    ]
+  },
+  {
+    "chunk_id": "ts-04-rdp-gagal::chunk-04",
+    "document_id": "ts-04-rdp-gagal",
+    "title": "RDP Gagal",
+    "category": "ssh_rdp",
+    "text": "4. Jalankan Connectivity Test di Console, atau dari workstation: curl -v telnet://DESTINATION_IP_ADDRESS:3389 (read-only, tidak mengubah resource) — GCE-019. Langkah diagnosis bertahap: 1. Jika boot belum selesai (screenshot menunjukkan sysprep) → tunggu, jangan restart paksa. 2. Jika firewall tidak mengizinkan 3389 → tambahkan rule dengan source range yang sesuai konteks keamanan pengguna (minta konfirmasi). 3. Jika kredensial bermasalah → reset password Windows via Console atau Special Administration Console (SAC) (GCE-019). 4. Jika RDS CAL habis → gunakan flag override /admin untuk administratif, pertimbangkan uninstall RDS bila memang bukan kebutuhan utama (tindakan ini mengubah peran server, perlu konfirmasi) — GCE-019.",
+    "url": "https://docs.cloud.google.com/compute/docs/troubleshooting/known-issues",
+    "source_ids": [
+      "GCE-002",
+      "GCE-003",
+      "GCE-019",
+      "GCE-021"
+    ]
+  },
+  {
+    "chunk_id": "ts-04-rdp-gagal::chunk-05",
+    "document_id": "ts-04-rdp-gagal",
+    "title": "RDP Gagal",
+    "category": "ssh_rdp",
+    "text": "4. Jika RDS CAL habis → gunakan flag override /admin untuk administratif, pertimbangkan uninstall RDS bila memang bukan kebutuhan utama (tindakan ini mengubah peran server, perlu konfirmasi) — GCE-019. 5. Jalankan skrip diagnosis bawaan rdp_status.ps1 dari dalam VM (via SAC/serial console) bila tersedia — GCE-019. Solusi/workaround: Lihat langkah di atas sesuai akar penyebab; untuk known issue versi tertentu, rujuk workaround spesifik di GCE-002 (misalnya memilih machine type dengan vCPU lebih kecil, atau OS versi lain). Risiko/catatan: Hindari restart paksa saat Windows Update sedang berjalan (disebutkan dalam GCE-003 sebagai praktik yang harus dihindari). Reset password dan perubahan firewall berdampak pada akses — informasikan ke pengguna.",
+    "url": "https://docs.cloud.google.com/compute/docs/troubleshooting/known-issues",
+    "source_ids": [
+      "GCE-002",
+      "GCE-003",
+      "GCE-019",
+      "GCE-021"
+    ]
+  },
+  {
+    "chunk_id": "ts-04-rdp-gagal::chunk-06",
+    "document_id": "ts-04-rdp-gagal",
+    "title": "RDP Gagal",
+    "category": "ssh_rdp",
+    "text": "Risiko/catatan: Hindari restart paksa saat Windows Update sedang berjalan (disebutkan dalam GCE-003 sebagai praktik yang harus dihindari). Reset password dan perubahan firewall berdampak pada akses — informasikan ke pengguna. Verifikasi: Koneksi RDP berhasil dan sesi desktop dapat digunakan secara stabil. Eskalasi/alternatif: Untuk BSOD berulang atau VM yang stuck di boot meski sudah diagnosis lanjutan (lihat GCE-003 — gunakan recovery VM terpisah untuk chkdsk/sfc/dism), atau jika tidak cocok pola di atas, eskalasi ke Google Cloud Support. Sumber: GCE-003, GCE-019, GCE-002, GCE-021.",
+    "url": "https://docs.cloud.google.com/compute/docs/troubleshooting/known-issues",
+    "source_ids": [
+      "GCE-002",
+      "GCE-003",
+      "GCE-019",
+      "GCE-021"
+    ]
+  },
+  {
+    "chunk_id": "ts-05-tidak-bisa-terhubung-ke-internet::chunk-01",
+    "document_id": "ts-05-tidak-bisa-terhubung-ke-internet",
+    "title": "Tidak Bisa Terhubung ke Internet",
+    "category": "networking",
+    "text": "Gejala/contoh error: VM tidak dapat ping/curl ke luar, update paket OS gagal, aplikasi tidak bisa memanggil API eksternal. Pertanyaan klarifikasi: Arah masalah — VM tidak bisa menjangkau internet (egress) atau internet tidak bisa menjangkau VM (ingress)? Apakah VM punya external IP? Apakah menggunakan Cloud NAT? Kapan terakhir kali berhasil, dan perubahan apa yang terjadi sejak itu? Kemungkinan penyebab: - Tidak ada external IP dan tidak ada Cloud NAT/proxy untuk egress (basics 3.8, GCE-001). - Tidak ada default route 0.0.0.0/0 menuju default-internet-gateway (mungkin terhapus/diubah oleh custom routing) (GCE-012). - Firewall egress memblokir traffic keluar (ingat: default VPC mengizinkan semua egress, tapi VPC custom bisa deny-by-default) (GCE-011, GCE-028).",
+    "url": "https://docs.cloud.google.com/compute/docs/troubleshooting/general-tips",
+    "source_ids": [
+      "GCE-001",
+      "GCE-012",
+      "GCE-011",
+      "GCE-028",
+      "GCE-019",
+      "GCE-013"
+    ]
+  },
+  {
+    "chunk_id": "ts-05-tidak-bisa-terhubung-ke-internet::chunk-02",
+    "document_id": "ts-05-tidak-bisa-terhubung-ke-internet",
+    "title": "Tidak Bisa Terhubung ke Internet",
+    "category": "networking",
+    "text": "- Tidak ada default route 0.0.0.0/0 menuju default-internet-gateway (mungkin terhapus/diubah oleh custom routing) (GCE-012). - Firewall egress memblokir traffic keluar (ingat: default VPC mengizinkan semua egress, tapi VPC custom bisa deny-by-default) (GCE-011, GCE-028). - DNS tidak terkonfigurasi benar (termasuk isu migrasi ke zonal DNS) (GCE-028). - Masalah MTU/fragmentasi paket pada custom image (default MTU 1460 byte; untuk UDP kurangi 28 byte header) (GCE-001). - Idle connection timeout (Cloud Next Generation Firewall memutus idle flow setelah 10 menit; Cloud NAT punya timeout dapat dikonfigurasi) — menyerupai gejala \"putus koneksi\" bukan \"tidak bisa connect\" (GCE-001, GCE-028). Pemeriksaan aman: 1. Periksa apakah VM memiliki external IP (read-only).",
+    "url": "https://docs.cloud.google.com/compute/docs/troubleshooting/general-tips",
+    "source_ids": [
+      "GCE-001",
+      "GCE-012",
+      "GCE-011",
+      "GCE-028",
+      "GCE-019",
+      "GCE-013"
+    ]
+  },
+  {
+    "chunk_id": "ts-05-tidak-bisa-terhubung-ke-internet::chunk-03",
+    "document_id": "ts-05-tidak-bisa-terhubung-ke-internet",
+    "title": "Tidak Bisa Terhubung ke Internet",
+    "category": "networking",
+    "text": "- Idle connection timeout (Cloud Next Generation Firewall memutus idle flow setelah 10 menit; Cloud NAT punya timeout dapat dikonfigurasi) — menyerupai gejala \"putus koneksi\" bukan \"tidak bisa connect\" (GCE-001, GCE-028). Pemeriksaan aman: 1. Periksa apakah VM memiliki external IP (read-only). 2. Periksa keberadaan default route internet gateway (read-only) — GCE-012. 3. Periksa firewall egress rule yang berlaku (read-only) — GCE-011. 4. Jalankan Connectivity Test di Console (read-only) — GCE-019, GCE-028. Langkah diagnosis bertahap: 1. Tidak ada external IP dan tidak ada Cloud NAT → ini _expected behavior_, bukan bug; opsi: tambahkan external IP (ubah exposure keamanan, perlu konfirmasi) atau konfigurasi Cloud NAT.",
+    "url": "https://docs.cloud.google.com/compute/docs/troubleshooting/general-tips",
+    "source_ids": [
+      "GCE-001",
+      "GCE-012",
+      "GCE-011",
+      "GCE-028",
+      "GCE-019",
+      "GCE-013"
+    ]
+  },
+  {
+    "chunk_id": "ts-05-tidak-bisa-terhubung-ke-internet::chunk-04",
+    "document_id": "ts-05-tidak-bisa-terhubung-ke-internet",
+    "title": "Tidak Bisa Terhubung ke Internet",
+    "category": "networking",
+    "text": "1. Tidak ada external IP dan tidak ada Cloud NAT → ini _expected behavior_, bukan bug; opsi: tambahkan external IP (ubah exposure keamanan, perlu konfirmasi) atau konfigurasi Cloud NAT. 2. Ada external IP tapi tetap gagal → periksa default route; bila sudah dihapus/diubah oleh custom route, ini perubahan konfigurasi yang signifikan — konfirmasi dengan pengguna sebelum mengubah routing. 3. Route dan IP normal tapi tetap gagal → periksa firewall egress rule. 4. Semua konfigurasi tampak benar tapi koneksi putus-putus pada koneksi idle lama → terapkan TCP keepalive (SO_KEEPALIVE, TCP_KEEPIDLE, TCP_KEEPINTVL, TCP_KEEPCNT) di level aplikasi/OS (GCE-001). 5. Masalah spesifik custom image dengan fragmentasi paket → sesuaikan MTU aplikasi (GCE-001).",
+    "url": "https://docs.cloud.google.com/compute/docs/troubleshooting/general-tips",
+    "source_ids": [
+      "GCE-001",
+      "GCE-012",
+      "GCE-011",
+      "GCE-028",
+      "GCE-019",
+      "GCE-013"
+    ]
+  },
+  {
+    "chunk_id": "ts-05-tidak-bisa-terhubung-ke-internet::chunk-05",
+    "document_id": "ts-05-tidak-bisa-terhubung-ke-internet",
+    "title": "Tidak Bisa Terhubung ke Internet",
+    "category": "networking",
+    "text": "4. Semua konfigurasi tampak benar tapi koneksi putus-putus pada koneksi idle lama → terapkan TCP keepalive (SO_KEEPALIVE, TCP_KEEPIDLE, TCP_KEEPINTVL, TCP_KEEPCNT) di level aplikasi/OS (GCE-001). 5. Masalah spesifik custom image dengan fragmentasi paket → sesuaikan MTU aplikasi (GCE-001). Solusi/workaround: Tambah external IP atau Cloud NAT; perbaiki/tambahkan default route; sesuaikan firewall egress; terapkan keepalive untuk idle connection. Risiko/catatan: Menambah external IP memperbesar permukaan serangan — jelaskan trade-off keamanan vs kemudahan akses (GCE-013). Mengubah custom route dapat memengaruhi traffic resource lain dalam VPC yang sama — periksa dampak luas sebelum mengubah.",
+    "url": "https://docs.cloud.google.com/compute/docs/troubleshooting/general-tips",
+    "source_ids": [
+      "GCE-001",
+      "GCE-012",
+      "GCE-011",
+      "GCE-028",
+      "GCE-019",
+      "GCE-013"
+    ]
+  },
+  {
+    "chunk_id": "ts-05-tidak-bisa-terhubung-ke-internet::chunk-06",
+    "document_id": "ts-05-tidak-bisa-terhubung-ke-internet",
+    "title": "Tidak Bisa Terhubung ke Internet",
+    "category": "networking",
+    "text": "Risiko/catatan: Menambah external IP memperbesar permukaan serangan — jelaskan trade-off keamanan vs kemudahan akses (GCE-013). Mengubah custom route dapat memengaruhi traffic resource lain dalam VPC yang sama — periksa dampak luas sebelum mengubah. Verifikasi: VM dapat melakukan outbound request (mis. curl berhasil) secara konsisten, bukan hanya sekali. Eskalasi/alternatif: Jika semua lapisan (IP, route, firewall) sudah benar tetapi masalah menetap, kemungkinan ada masalah di sisi penyedia layanan tujuan atau perlu Connectivity Test lanjutan dari Google Cloud Support. Sumber: GCE-001, GCE-012, GCE-013, GCE-028, GCE-011.",
+    "url": "https://docs.cloud.google.com/compute/docs/troubleshooting/general-tips",
+    "source_ids": [
+      "GCE-001",
+      "GCE-012",
+      "GCE-011",
+      "GCE-028",
+      "GCE-019",
+      "GCE-013"
+    ]
+  },
+  {
+    "chunk_id": "ts-06-firewall-memblokir-koneksi::chunk-01",
+    "document_id": "ts-06-firewall-memblokir-koneksi",
+    "title": "Firewall Memblokir Koneksi",
+    "category": "firewall",
+    "text": "Gejala/contoh error: Koneksi timeout (bukan \"connection refused\") ke port tertentu; SSH-in-Browser gagal akibat firewall rule custom (GCE-002, GCE-018). Pertanyaan klarifikasi: Port dan protokol apa yang gagal? Apakah ini VPC default atau custom? Apakah ada firewall rule custom yang baru ditambahkan/diubah? Traffic datang dari mana (internal/eksternal/rentang IP tertentu)? Kemungkinan penyebab: - Tidak ada rule allow untuk port/protokol yang relevan, dan kebijakan default VPC adalah deny semua traffic yang tidak diizinkan eksplisit (GCE-028). - Rule dengan priority lebih tinggi (angka lebih kecil) men-deny traffic yang seharusnya di-allow oleh rule lain (GCE-011). - Firewall rule custom mengganggu SSH-in-Browser karena tidak mengizinkan range IP yang dipakai fitur tersebut (GCE-002).",
+    "url": "https://docs.cloud.google.com/compute/docs/troubleshooting/known-issues",
+    "source_ids": [
+      "GCE-002",
+      "GCE-018",
+      "GCE-028",
+      "GCE-011",
+      "GCE-021"
+    ]
+  },
+  {
+    "chunk_id": "ts-06-firewall-memblokir-koneksi::chunk-02",
+    "document_id": "ts-06-firewall-memblokir-koneksi",
+    "title": "Firewall Memblokir Koneksi",
+    "category": "firewall",
+    "text": "- Rule dengan priority lebih tinggi (angka lebih kecil) men-deny traffic yang seharusnya di-allow oleh rule lain (GCE-011). - Firewall rule custom mengganggu SSH-in-Browser karena tidak mengizinkan range IP yang dipakai fitur tersebut (GCE-002). - Salah arah rule (mengatur ingress padahal masalah di egress, atau sebaliknya) (GCE-011). Pemeriksaan aman: 1. Daftar firewall rule yang berlaku untuk VPC/instance terkait beserta priority-nya (read-only) — GCE-011. 2. Jalankan Connectivity Test untuk melihat rule mana yang memblokir (read-only) — GCE-028. Langkah diagnosis bertahap: 1. Identifikasi rule dengan priority tertinggi yang cocok dengan traffic — itulah rule yang menentukan (GCE-011). 2. Periksa apakah ingress/egress rule sesuai arah masalah.",
+    "url": "https://docs.cloud.google.com/compute/docs/troubleshooting/known-issues",
+    "source_ids": [
+      "GCE-002",
+      "GCE-018",
+      "GCE-028",
+      "GCE-011",
+      "GCE-021"
+    ]
+  },
+  {
+    "chunk_id": "ts-06-firewall-memblokir-koneksi::chunk-03",
+    "document_id": "ts-06-firewall-memblokir-koneksi",
+    "title": "Firewall Memblokir Koneksi",
+    "category": "firewall",
+    "text": "1. Identifikasi rule dengan priority tertinggi yang cocok dengan traffic — itulah rule yang menentukan (GCE-011). 2. Periksa apakah ingress/egress rule sesuai arah masalah. 3. Untuk kasus SSH-in-Browser: aktifkan Identity-Aware Proxy for TCP, pastikan rule default-allow-ssh tidak terhapus, atau gunakan gcloud CLI sebagai alternatif (GCE-002). Solusi/workaround: Tambahkan/ubah rule allow dengan source/destination dan port yang spesifik sesuai kebutuhan nyata (bukan membuka seluas mungkin). Untuk akses administratif tanpa membuka port publik, gunakan IAP TCP forwarding dengan firewall rule khusus range 35.235.240.0/20 (GCE-021).",
+    "url": "https://docs.cloud.google.com/compute/docs/troubleshooting/known-issues",
+    "source_ids": [
+      "GCE-002",
+      "GCE-018",
+      "GCE-028",
+      "GCE-011",
+      "GCE-021"
+    ]
+  },
+  {
+    "chunk_id": "ts-06-firewall-memblokir-koneksi::chunk-04",
+    "document_id": "ts-06-firewall-memblokir-koneksi",
+    "title": "Firewall Memblokir Koneksi",
+    "category": "firewall",
+    "text": "Solusi/workaround: Tambahkan/ubah rule allow dengan source/destination dan port yang spesifik sesuai kebutuhan nyata (bukan membuka seluas mungkin). Untuk akses administratif tanpa membuka port publik, gunakan IAP TCP forwarding dengan firewall rule khusus range 35.235.240.0/20 (GCE-021). Risiko/catatan: Mengubah firewall rule memengaruhi keamanan seluruh resource yang kena target rule tersebut — selalu konfirmasi cakupan (target instance, source range) sebelum menerapkan. Jangan menyarankan 0.0.0.0/0 sebagai source default untuk port administratif (SSH/RDP) sebagai solusi umum. Verifikasi: Traffic pada port yang dimaksud berhasil melewati firewall (uji dengan Connectivity Test atau percobaan koneksi nyata oleh pengguna).",
+    "url": "https://docs.cloud.google.com/compute/docs/troubleshooting/known-issues",
+    "source_ids": [
+      "GCE-002",
+      "GCE-018",
+      "GCE-028",
+      "GCE-011",
+      "GCE-021"
+    ]
+  },
+  {
+    "chunk_id": "ts-06-firewall-memblokir-koneksi::chunk-05",
+    "document_id": "ts-06-firewall-memblokir-koneksi",
+    "title": "Firewall Memblokir Koneksi",
+    "category": "firewall",
+    "text": "Risiko/catatan: Mengubah firewall rule memengaruhi keamanan seluruh resource yang kena target rule tersebut — selalu konfirmasi cakupan (target instance, source range) sebelum menerapkan. Jangan menyarankan 0.0.0.0/0 sebagai source default untuk port administratif (SSH/RDP) sebagai solusi umum. Verifikasi: Traffic pada port yang dimaksud berhasil melewati firewall (uji dengan Connectivity Test atau percobaan koneksi nyata oleh pengguna). Eskalasi/alternatif: Jika terdapat Organization Policy atau hierarchical firewall policy di level organisasi/folder yang di luar kendali project, eskalasi ke admin organisasi/Google Cloud Support. Sumber: GCE-011, GCE-021, GCE-028, GCE-002.",
+    "url": "https://docs.cloud.google.com/compute/docs/troubleshooting/known-issues",
+    "source_ids": [
+      "GCE-002",
+      "GCE-018",
+      "GCE-028",
+      "GCE-011",
+      "GCE-021"
+    ]
+  },
+  {
+    "chunk_id": "ts-07-permission-denied::chunk-01",
+    "document_id": "ts-07-permission-denied",
+    "title": "Permission Denied",
+    "category": "iam_permission",
+    "text": "Gejala/contoh error: Required 'compute.regions.get' permission for 'projects/PROJECT_ID/regions/REGION'; error IAM saat SSH (OS Login); error saat memanggil Google Cloud API dari dalam VM. Pertanyaan klarifikasi: Principal mana yang mengalami ini (user, service account)? Tindakan apa yang gagal? Pesan error lengkap (biasanya menyebut permission yang kurang)? Apakah ini akses manusia ke Console/gcloud, atau akses VM ke API lain? Kemungkinan penyebab: - Principal belum memiliki IAM role yang mencakup permission yang dibutuhkan (GCE-015, GCE-025). - Untuk akses SSH: role OS Login (roles/compute.osLogin/osAdminLogin) belum diberikan (GCE-018, GCE-020).",
+    "url": "https://docs.cloud.google.com/iam/docs/overview",
+    "source_ids": [
+      "GCE-015",
+      "GCE-025",
+      "GCE-018",
+      "GCE-020",
+      "GCE-014",
+      "GCE-021",
+      "GCE-016"
+    ]
+  },
+  {
+    "chunk_id": "ts-07-permission-denied::chunk-02",
+    "document_id": "ts-07-permission-denied",
+    "title": "Permission Denied",
+    "category": "iam_permission",
+    "text": "- Principal belum memiliki IAM role yang mencakup permission yang dibutuhkan (GCE-015, GCE-025). - Untuk akses SSH: role OS Login (roles/compute.osLogin/osAdminLogin) belum diberikan (GCE-018, GCE-020). - Untuk akses API dari dalam VM: service account punya IAM role memadai tetapi access scope instance membatasinya (atau sebaliknya) — basics 3.10 (GCE-014). - Untuk IAP tunnel: roles/iap.tunnelResourceAccessor belum diberikan (GCE-021). Pemeriksaan aman: 1. Identifikasi principal dan permission persis dari pesan error (read-only). 2. Periksa role yang sudah di-bind ke principal tersebut pada resource terkait (read-only) — GCE-015. 3. Untuk akses dari VM: periksa service account yang dipasang dan access scope-nya (read-only) — GCE-014. Langkah diagnosis bertahap:",
+    "url": "https://docs.cloud.google.com/iam/docs/overview",
+    "source_ids": [
+      "GCE-015",
+      "GCE-025",
+      "GCE-018",
+      "GCE-020",
+      "GCE-014",
+      "GCE-021",
+      "GCE-016"
+    ]
+  },
+  {
+    "chunk_id": "ts-07-permission-denied::chunk-03",
+    "document_id": "ts-07-permission-denied",
+    "title": "Permission Denied",
+    "category": "iam_permission",
+    "text": "2. Periksa role yang sudah di-bind ke principal tersebut pada resource terkait (read-only) — GCE-015. 3. Untuk akses dari VM: periksa service account yang dipasang dan access scope-nya (read-only) — GCE-014. Langkah diagnosis bertahap: 1. Petakan permission yang kurang ke predefined role paling sempit yang mencakupnya (prinsip least privilege) — GCE-016. 2. Jika kasus akses VM ke API: pastikan baik IAM role maupun access scope mengizinkan; salah satu saja tidak cukup (GCE-014). 3. Berikan role pada level resource sesempit mungkin (instance/project), bukan di level organisasi, kecuali memang dibutuhkan.",
+    "url": "https://docs.cloud.google.com/iam/docs/overview",
+    "source_ids": [
+      "GCE-015",
+      "GCE-025",
+      "GCE-018",
+      "GCE-020",
+      "GCE-014",
+      "GCE-021",
+      "GCE-016"
+    ]
+  },
+  {
+    "chunk_id": "ts-07-permission-denied::chunk-04",
+    "document_id": "ts-07-permission-denied",
+    "title": "Permission Denied",
+    "category": "iam_permission",
+    "text": "2. Jika kasus akses VM ke API: pastikan baik IAM role maupun access scope mengizinkan; salah satu saja tidak cukup (GCE-014). 3. Berikan role pada level resource sesempit mungkin (instance/project), bukan di level organisasi, kecuali memang dibutuhkan. Solusi/workaround: Grant role predefined yang sesuai kebutuhan spesifik (mis. roles/compute.osLogin untuk SSH non-admin, roles/compute.viewer untuk akses baca). Hindari basic role (Owner/Editor) sebagai solusi cepat. Risiko/catatan: Jangan menyarankan pemberian role Owner sebagai solusi umum untuk error permission apa pun — ini melanggar prinsip least privilege dan berisiko keamanan besar. Perubahan IAM policy memengaruhi akses principal ke resource secara luas; informasikan cakupan sebelum diterapkan.",
+    "url": "https://docs.cloud.google.com/iam/docs/overview",
+    "source_ids": [
+      "GCE-015",
+      "GCE-025",
+      "GCE-018",
+      "GCE-020",
+      "GCE-014",
+      "GCE-021",
+      "GCE-016"
+    ]
+  },
+  {
+    "chunk_id": "ts-07-permission-denied::chunk-05",
+    "document_id": "ts-07-permission-denied",
+    "title": "Permission Denied",
+    "category": "iam_permission",
+    "text": "Risiko/catatan: Jangan menyarankan pemberian role Owner sebagai solusi umum untuk error permission apa pun — ini melanggar prinsip least privilege dan berisiko keamanan besar. Perubahan IAM policy memengaruhi akses principal ke resource secara luas; informasikan cakupan sebelum diterapkan. Verifikasi: Tindakan yang semula gagal kini berhasil dengan role yang diberikan, dan tidak ada permission berlebih yang ditambahkan dari yang dibutuhkan. Eskalasi/alternatif: Jika pengguna tidak memiliki akses untuk mengubah IAM policy sama sekali, arahkan ke administrator project/organisasi. Sumber: GCE-014, GCE-015, GCE-016, GCE-018, GCE-020, GCE-021, GCE-025.",
+    "url": "https://docs.cloud.google.com/iam/docs/overview",
+    "source_ids": [
+      "GCE-015",
+      "GCE-025",
+      "GCE-018",
+      "GCE-020",
+      "GCE-014",
+      "GCE-021",
+      "GCE-016"
+    ]
+  },
+  {
+    "chunk_id": "ts-08-quota-exceeded::chunk-01",
+    "document_id": "ts-08-quota-exceeded",
+    "title": "Quota Exceeded",
+    "category": "quota",
+    "text": "Gejala/contoh error: Quota QUOTA_NAME exceeded. Limit: QUOTA_LIMIT in region REGION; error rateLimitExceeded (403) dengan domain usageLimits saat memanggil API berulang (GCE-017, GCE-029). Pertanyaan klarifikasi: Resource apa yang disebut dalam pesan error (CPU, IP, disk, instance)? Region mana? Apakah ini terjadi saat create resource baru, atau saat memanggil API berulang kali dalam waktu singkat (menandakan concurrent operation quota, bukan resource quota)? Kemungkinan penyebab: - Quota resource (CPU/VM/IP/disk) per region/project telah mencapai batas (GCE-017). - Concurrent operation quota — terlalu banyak operasi API berjalan bersamaan (mis. memanggil instances.stop berulang dalam waktu singkat) menghasilkan rateLimitExceeded, berbeda dari quota resource (GCE-029).",
+    "url": "https://docs.cloud.google.com/compute/quotas",
+    "source_ids": [
+      "GCE-017",
+      "GCE-029",
+      "GCE-026"
+    ]
+  },
+  {
+    "chunk_id": "ts-08-quota-exceeded::chunk-02",
+    "document_id": "ts-08-quota-exceeded",
+    "title": "Quota Exceeded",
+    "category": "quota",
+    "text": "- Concurrent operation quota — terlalu banyak operasi API berjalan bersamaan (mis. memanggil instances.stop berulang dalam waktu singkat) menghasilkan rateLimitExceeded, berbeda dari quota resource (GCE-029). - Mengira resource availability error sebagai quota (lihat basics 3.12) — periksa teks error dengan cermat. Pemeriksaan aman: 1. Baca field reason pada error API untuk membedakan QUOTA_EXCEEDED vs rateLimitExceeded vs resource availability (read-only). 2. Lihat Quotas page di Console, filter sesuai service/resource/region (read-only) — GCE-017. 3. Untuk dugaan concurrent operation quota: cari log dengan serviceName=\"compute.googleapis.com\" dan pesan \"Rate Limit Exceeded\" di Logs Explorer (read-only) — GCE-029. Langkah diagnosis bertahap:",
+    "url": "https://docs.cloud.google.com/compute/quotas",
+    "source_ids": [
+      "GCE-017",
+      "GCE-029",
+      "GCE-026"
+    ]
+  },
+  {
+    "chunk_id": "ts-08-quota-exceeded::chunk-03",
+    "document_id": "ts-08-quota-exceeded",
+    "title": "Quota Exceeded",
+    "category": "quota",
+    "text": "3. Untuk dugaan concurrent operation quota: cari log dengan serviceName=\"compute.googleapis.com\" dan pesan \"Rate Limit Exceeded\" di Logs Explorer (read-only) — GCE-029. Langkah diagnosis bertahap: 1. Jika quota resource habis → ajukan permintaan peningkatan quota resmi (tidak berlaku untuk akun Free Trial) — GCE-017. 2. Jika concurrent operation quota → identifikasi method API dan lokasi dari audit log, lalu terapkan exponential backoff, kurangi polling, atau sebar operasi lintas project (GCE-029). Dokumentasi menegaskan \"system limits can't be modified\" untuk jenis quota ini — fokus pada optimasi pemanggilan API, bukan permintaan kenaikan limit. Solusi/workaround: Lihat langkah di atas sesuai jenis quota.",
+    "url": "https://docs.cloud.google.com/compute/quotas",
+    "source_ids": [
+      "GCE-017",
+      "GCE-029",
+      "GCE-026"
+    ]
+  },
+  {
+    "chunk_id": "ts-08-quota-exceeded::chunk-04",
+    "document_id": "ts-08-quota-exceeded",
+    "title": "Quota Exceeded",
+    "category": "quota",
+    "text": "2. Jika concurrent operation quota → identifikasi method API dan lokasi dari audit log, lalu terapkan exponential backoff, kurangi polling, atau sebar operasi lintas project (GCE-029). Dokumentasi menegaskan \"system limits can't be modified\" untuk jenis quota ini — fokus pada optimasi pemanggilan API, bukan permintaan kenaikan limit. Solusi/workaround: Lihat langkah di atas sesuai jenis quota. Risiko/catatan: Jangan menyamakan quota exceeded dengan resource availability (lihat topik 1 dan basics 3.12) — keduanya butuh jalur solusi berbeda. Verifikasi: Operasi yang sebelumnya gagal kini berhasil setelah quota ditingkatkan atau pola pemanggilan API dioptimalkan.",
+    "url": "https://docs.cloud.google.com/compute/quotas",
+    "source_ids": [
+      "GCE-017",
+      "GCE-029",
+      "GCE-026"
+    ]
+  },
+  {
+    "chunk_id": "ts-08-quota-exceeded::chunk-05",
+    "document_id": "ts-08-quota-exceeded",
+    "title": "Quota Exceeded",
+    "category": "quota",
+    "text": "Risiko/catatan: Jangan menyamakan quota exceeded dengan resource availability (lihat topik 1 dan basics 3.12) — keduanya butuh jalur solusi berbeda. Verifikasi: Operasi yang sebelumnya gagal kini berhasil setelah quota ditingkatkan atau pola pemanggilan API dioptimalkan. Eskalasi/alternatif: Jika permintaan peningkatan quota ditolak atau dibutuhkan kapasitas besar mendadak, hubungi Google Cloud Sales/Support untuk perencanaan kapasitas. Sumber: GCE-017, GCE-029, GCE-026.",
+    "url": "https://docs.cloud.google.com/compute/quotas",
+    "source_ids": [
+      "GCE-017",
+      "GCE-029",
+      "GCE-026"
+    ]
+  },
+  {
+    "chunk_id": "ts-09-disk-penuh::chunk-01",
+    "document_id": "ts-09-disk-penuh",
+    "title": "Disk Penuh",
+    "category": "disk_storage",
+    "text": "Gejala/contoh error: No space left on device; SSH/RDP gagal connect padahal sebelumnya normal; VM tidak bisa start karena boot disk penuh dan OS tidak mendukung auto-resize (GCE-024, GCE-027). Pertanyaan klarifikasi: Linux atau Windows? Disk mana yang penuh (boot disk atau data disk)? Apakah ini menghambat VM start, atau VM masih bisa diakses tapi aplikasi error? Kapan mulai terjadi, adakah proses yang baru menulis data besar? Kemungkinan penyebab: - Ruang filesystem guest OS habis meski kapasitas disk (provisioned size) di Compute Engine sebenarnya cukup besar — filesystem belum di-extend untuk memakai penuh kapasitas disk (basics 3.6, GCE-024). - Kapasitas disk yang di-provision memang sudah habis (perlu resize sungguhan). - Log/cache/file sementara menumpuk tanpa rotasi.",
+    "url": "https://docs.cloud.google.com/compute/docs/troubleshooting/troubleshooting-disk-full-resize",
+    "source_ids": [
+      "GCE-024",
+      "GCE-027",
+      "GCE-008",
+      "GCE-009"
+    ]
+  },
+  {
+    "chunk_id": "ts-09-disk-penuh::chunk-02",
+    "document_id": "ts-09-disk-penuh",
+    "title": "Disk Penuh",
+    "category": "disk_storage",
+    "text": "- Ruang filesystem guest OS habis meski kapasitas disk (provisioned size) di Compute Engine sebenarnya cukup besar — filesystem belum di-extend untuk memakai penuh kapasitas disk (basics 3.6, GCE-024). - Kapasitas disk yang di-provision memang sudah habis (perlu resize sungguhan). - Log/cache/file sementara menumpuk tanpa rotasi. Pemeriksaan aman (read-only): 1. Linux: periksa serial console output untuk konfirmasi kondisi disk penuh via gcloud compute instances tail-serial-port-output VM_NAME, atau bila masih bisa SSH jalankan df -h (GCE-024). 2. Windows: gunakan Special Administration Console (SAC) dan jalankan wmic logicaldisk get caption,freespace,size (GCE-024). Langkah diagnosis bertahap:",
+    "url": "https://docs.cloud.google.com/compute/docs/troubleshooting/troubleshooting-disk-full-resize",
+    "source_ids": [
+      "GCE-024",
+      "GCE-027",
+      "GCE-008",
+      "GCE-009"
+    ]
+  },
+  {
+    "chunk_id": "ts-09-disk-penuh::chunk-03",
+    "document_id": "ts-09-disk-penuh",
+    "title": "Disk Penuh",
+    "category": "disk_storage",
+    "text": "2. Windows: gunakan Special Administration Console (SAC) dan jalankan wmic logicaldisk get caption,freespace,size (GCE-024). Langkah diagnosis bertahap: 1. Pastikan dulu ini benar kapasitas disk, bukan sekadar filesystem yang belum di-extend setelah resize sebelumnya. 2. Sebelum tindakan apa pun yang mengubah disk, buat snapshot terlebih dahulu untuk melindungi data — ini langkah wajib menurut dokumentasi resmi sebelum troubleshooting lanjutan (GCE-024). 3. Hapus file yang tidak diperlukan jika memungkinkan untuk mendapat ruang segera (GCE-024). 4. Jika memang perlu kapasitas lebih besar: resize disk melalui Console/gcloud, lalu extend filesystem secara manual bila image tidak mendukung auto-expand (GCE-024).",
+    "url": "https://docs.cloud.google.com/compute/docs/troubleshooting/troubleshooting-disk-full-resize",
+    "source_ids": [
+      "GCE-024",
+      "GCE-027",
+      "GCE-008",
+      "GCE-009"
+    ]
+  },
+  {
+    "chunk_id": "ts-09-disk-penuh::chunk-04",
+    "document_id": "ts-09-disk-penuh",
+    "title": "Disk Penuh",
+    "category": "disk_storage",
+    "text": "4. Jika memang perlu kapasitas lebih besar: resize disk melalui Console/gcloud, lalu extend filesystem secara manual bila image tidak mendukung auto-expand (GCE-024). Solusi/workaround: Resize disk + extend filesystem; untuk VM yang sudah tidak bisa diakses karena boot disk penuh, lepas disk dan pasang sebagai secondary disk ke instance debug lain untuk dibersihkan/di-resize, lalu pasang kembali (GCE-024, GCE-027).",
+    "url": "https://docs.cloud.google.com/compute/docs/troubleshooting/troubleshooting-disk-full-resize",
+    "source_ids": [
+      "GCE-024",
+      "GCE-027",
+      "GCE-008",
+      "GCE-009"
+    ]
+  },
+  {
+    "chunk_id": "ts-09-disk-penuh::chunk-05",
+    "document_id": "ts-09-disk-penuh",
+    "title": "Disk Penuh",
+    "category": "disk_storage",
+    "text": "Solusi/workaround: Resize disk + extend filesystem; untuk VM yang sudah tidak bisa diakses karena boot disk penuh, lepas disk dan pasang sebagai secondary disk ke instance debug lain untuk dibersihkan/di-resize, lalu pasang kembali (GCE-024, GCE-027). Risiko/catatan: Resize memiliki batas frekuensi untuk jenis disk tertentu — Extreme Persistent Disk maksimal sekali per 6 jam, Hyperdisk Extreme sekali per 4 jam (GCE-024); ini tidak berlaku generik untuk semua jenis PD. Untuk konfigurasi Storage Spaces Direct (S2D), resize disk dasar tidak otomatis menambah kapasitas yang dikenali — perlu menambah drive baru (GCE-024). Operasi detach/attach disk berisiko downtime — perlu konfirmasi pengguna.",
+    "url": "https://docs.cloud.google.com/compute/docs/troubleshooting/troubleshooting-disk-full-resize",
+    "source_ids": [
+      "GCE-024",
+      "GCE-027",
+      "GCE-008",
+      "GCE-009"
+    ]
+  },
+  {
+    "chunk_id": "ts-09-disk-penuh::chunk-06",
+    "document_id": "ts-09-disk-penuh",
+    "title": "Disk Penuh",
+    "category": "disk_storage",
+    "text": "Risiko/catatan: Resize memiliki batas frekuensi untuk jenis disk tertentu — Extreme Persistent Disk maksimal sekali per 6 jam, Hyperdisk Extreme sekali per 4 jam (GCE-024); ini tidak berlaku generik untuk semua jenis PD. Untuk konfigurasi Storage Spaces Direct (S2D), resize disk dasar tidak otomatis menambah kapasitas yang dikenali — perlu menambah drive baru (GCE-024). Operasi detach/attach disk berisiko downtime — perlu konfirmasi pengguna. Verifikasi: df -h (Linux) atau wmic logicaldisk (Windows) menunjukkan ruang kosong memadai, dan VM/aplikasi kembali berfungsi normal. Eskalasi/alternatif: Jika akses VM tetap tidak bisa dipulihkan setelah resize, pertimbangkan membuat disk baru dari snapshot atau gunakan tool pemulihan resmi (GCE Rescue) (GCE-024).",
+    "url": "https://docs.cloud.google.com/compute/docs/troubleshooting/troubleshooting-disk-full-resize",
+    "source_ids": [
+      "GCE-024",
+      "GCE-027",
+      "GCE-008",
+      "GCE-009"
+    ]
+  },
+  {
+    "chunk_id": "ts-09-disk-penuh::chunk-07",
+    "document_id": "ts-09-disk-penuh",
+    "title": "Disk Penuh",
+    "category": "disk_storage",
+    "text": "Eskalasi/alternatif: Jika akses VM tetap tidak bisa dipulihkan setelah resize, pertimbangkan membuat disk baru dari snapshot atau gunakan tool pemulihan resmi (GCE Rescue) (GCE-024). Sumber: GCE-024, GCE-027, GCE-008, GCE-009.",
+    "url": "https://docs.cloud.google.com/compute/docs/troubleshooting/troubleshooting-disk-full-resize",
+    "source_ids": [
+      "GCE-024",
+      "GCE-027",
+      "GCE-008",
+      "GCE-009"
+    ]
+  },
+  {
+    "chunk_id": "ts-10-vm-lambat::chunk-01",
+    "document_id": "ts-10-vm-lambat",
+    "title": "VM Lambat",
+    "category": "performance",
+    "text": "Gejala/contoh error: Aplikasi merespons lambat; CPU utilization tinggi terus-menerus; I/O disk lambat; throughput jaringan rendah. Pertanyaan klarifikasi: Lambat di sisi apa (CPU, memory, disk I/O, network)? Sejak kapan, dan apakah ada perubahan beban kerja/trafik terbaru? Machine type dan jenis disk yang dipakai? Apakah sudah memasang Ops Agent untuk metrik guest-level? Kemungkinan penyebab (harus diperiksa lewat metrik, bukan ditebak dari satu indikator): - CPU bottleneck — termasuk kemungkinan metrik CPU utilization yang hanya terskala sampai 50% pada instance dengan satu thread per core (perlu normalisasi di Metrics Explorer) (GCE-002). - Memory bottleneck — metrik ini tidak tersedia tanpa Ops Agent terpasang (GCE-030).",
+    "url": "https://docs.cloud.google.com/compute/docs/troubleshooting/known-issues",
+    "source_ids": [
+      "GCE-002",
+      "GCE-030",
+      "GCE-023",
+      "GCE-028"
+    ]
+  },
+  {
+    "chunk_id": "ts-10-vm-lambat::chunk-02",
+    "document_id": "ts-10-vm-lambat",
+    "title": "VM Lambat",
+    "category": "performance",
+    "text": "- CPU bottleneck — termasuk kemungkinan metrik CPU utilization yang hanya terskala sampai 50% pada instance dengan satu thread per core (perlu normalisasi di Metrics Explorer) (GCE-002). - Memory bottleneck — metrik ini tidak tersedia tanpa Ops Agent terpasang (GCE-030). - Disk I/O terbatas oleh performa disk (ukuran) atau oleh machine type, karena performa aktual = MIN(disk limit, machine type limit) (GCE-023). - Network throughput terbatas oleh single TCP flow pada instance tertentu, misalnya C3D >30 vCPU yang terbatas 20–25 Gbps untuk satu flow (known issue, kondisional) (GCE-002). - RX/TX queue NIC tidak memadai untuk traffic rate tinggi menyebabkan packet loss/latency (GCE-028). Pemeriksaan aman (read-only):",
+    "url": "https://docs.cloud.google.com/compute/docs/troubleshooting/known-issues",
+    "source_ids": [
+      "GCE-002",
+      "GCE-030",
+      "GCE-023",
+      "GCE-028"
+    ]
+  },
+  {
+    "chunk_id": "ts-10-vm-lambat::chunk-03",
+    "document_id": "ts-10-vm-lambat",
+    "title": "VM Lambat",
+    "category": "performance",
+    "text": "- Network throughput terbatas oleh single TCP flow pada instance tertentu, misalnya C3D >30 vCPU yang terbatas 20–25 Gbps untuk satu flow (known issue, kondisional) (GCE-002). - RX/TX queue NIC tidak memadai untuk traffic rate tinggi menyebabkan packet loss/latency (GCE-028). Pemeriksaan aman (read-only): 1. Buka tab Observability pada instance di Console untuk metrik CPU, network, disk I/O bawaan (tanpa agent) (GCE-030). 2. Jika butuh metrik memory/proses, periksa apakah Ops Agent sudah terpasang; bila belum, ini sendiri adalah temuan (keterbatasan visibilitas), bukan penyebab lambat (GCE-030). 3. Bandingkan beban I/O aktual terhadap batas performa disk dan machine type (GCE-023). Langkah diagnosis bertahap:",
+    "url": "https://docs.cloud.google.com/compute/docs/troubleshooting/known-issues",
+    "source_ids": [
+      "GCE-002",
+      "GCE-030",
+      "GCE-023",
+      "GCE-028"
+    ]
+  },
+  {
+    "chunk_id": "ts-10-vm-lambat::chunk-04",
+    "document_id": "ts-10-vm-lambat",
+    "title": "VM Lambat",
+    "category": "performance",
+    "text": "2. Jika butuh metrik memory/proses, periksa apakah Ops Agent sudah terpasang; bila belum, ini sendiri adalah temuan (keterbatasan visibilitas), bukan penyebab lambat (GCE-030). 3. Bandingkan beban I/O aktual terhadap batas performa disk dan machine type (GCE-023). Langkah diagnosis bertahap: 1. Periksa CPU utilization — bila tinggi terus-menerus, evaluasi apakah machine type/vCPU cukup untuk beban kerja (basics 3.3), ingat kemungkinan isu skala metrik 50% pada single-thread-per-core (GCE-002). 2. Periksa disk I/O — bandingkan dengan batas teoretis MIN(disk, machine type); jika disk sudah di batas, pertimbangkan ukuran disk lebih besar atau jenis disk performa lebih tinggi (GCE-023). 3. Periksa network — bila single flow mentok, uji dengan multiple TCP flow (GCE-002).",
+    "url": "https://docs.cloud.google.com/compute/docs/troubleshooting/known-issues",
+    "source_ids": [
+      "GCE-002",
+      "GCE-030",
+      "GCE-023",
+      "GCE-028"
+    ]
+  },
+  {
+    "chunk_id": "ts-10-vm-lambat::chunk-05",
+    "document_id": "ts-10-vm-lambat",
+    "title": "VM Lambat",
+    "category": "performance",
+    "text": "2. Periksa disk I/O — bandingkan dengan batas teoretis MIN(disk, machine type); jika disk sudah di batas, pertimbangkan ukuran disk lebih besar atau jenis disk performa lebih tinggi (GCE-023). 3. Periksa network — bila single flow mentok, uji dengan multiple TCP flow (GCE-002). 4. Jika metrik memory dibutuhkan dan belum ada Ops Agent, pasang Ops Agent dahulu sebelum menyimpulkan ada/tidaknya bottleneck memory (GCE-030). Solusi/workaround: Upgrade machine type/vCPU, upgrade/resize disk untuk performa lebih tinggi, gunakan multiple TCP flow untuk throughput jaringan, pasang Ops Agent untuk visibilitas penuh.",
+    "url": "https://docs.cloud.google.com/compute/docs/troubleshooting/known-issues",
+    "source_ids": [
+      "GCE-002",
+      "GCE-030",
+      "GCE-023",
+      "GCE-028"
+    ]
+  },
+  {
+    "chunk_id": "ts-10-vm-lambat::chunk-06",
+    "document_id": "ts-10-vm-lambat",
+    "title": "VM Lambat",
+    "category": "performance",
+    "text": "Solusi/workaround: Upgrade machine type/vCPU, upgrade/resize disk untuk performa lebih tinggi, gunakan multiple TCP flow untuk throughput jaringan, pasang Ops Agent untuk visibilitas penuh. Risiko/catatan: Jangan menyimpulkan penyebab dari satu metrik saja (prinsip wajib sesuai gcp-troubleshooting-analyst). Resize machine type/disk dapat memerlukan restart/downtime — perlu konfirmasi pengguna. Verifikasi: Metrik yang relevan (CPU/memory/disk I/O/network) kembali ke level normal dan performa aplikasi membaik secara terukur, bukan sekadar perasaan subjektif.",
+    "url": "https://docs.cloud.google.com/compute/docs/troubleshooting/known-issues",
+    "source_ids": [
+      "GCE-002",
+      "GCE-030",
+      "GCE-023",
+      "GCE-028"
+    ]
+  },
+  {
+    "chunk_id": "ts-10-vm-lambat::chunk-07",
+    "document_id": "ts-10-vm-lambat",
+    "title": "VM Lambat",
+    "category": "performance",
+    "text": "Verifikasi: Metrik yang relevan (CPU/memory/disk I/O/network) kembali ke level normal dan performa aplikasi membaik secara terukur, bukan sekadar perasaan subjektif. Eskalasi/alternatif: Jika semua resource (CPU/memory/disk/network) tampak dalam batas wajar namun aplikasi tetap lambat, kemungkinan masalah ada di level aplikasi/database, di luar cakupan infrastruktur Compute Engine — arahkan ke tim aplikasi terkait. Sumber: GCE-002, GCE-023, GCE-028, GCE-030.",
+    "url": "https://docs.cloud.google.com/compute/docs/troubleshooting/known-issues",
+    "source_ids": [
+      "GCE-002",
+      "GCE-030",
+      "GCE-023",
+      "GCE-028"
+    ]
+  },
+  {
+    "chunk_id": "ts-11-masalah-startup::chunk-01",
+    "document_id": "ts-11-masalah-startup",
+    "title": "Masalah Startup",
+    "category": "vm_lifecycle",
+    "text": "Gejala/contoh error: VM stuck di boot, tidak pernah mencapai RUNNING yang responsif; kernel panic; fstab error; MBR invalid; startup script gagal sehingga service tidak berjalan. Pertanyaan klarifikasi: Linux atau Windows? Apakah menggunakan startup script, dan apa isinya secara umum? Apakah ini VM baru atau VM lama yang baru saja diubah (resize disk, ganti machine type, update OS)? Apakah bisa melihat serial console / screenshot? Kemungkinan penyebab: - Boot disk penuh dan OS tidak mendukung auto-resize filesystem (GCE-027). - Filesystem corrupt atau MBR/bootloader invalid (GCE-027). - Startup script error fatal yang menghentikan proses boot atau gagal menjalankan service yang diharapkan. - Operasi disk yang sedang berjalan (clone/snapshot) memblokir startup (GCE-025).",
+    "url": "https://docs.cloud.google.com/compute/docs/troubleshooting/vm-startup",
+    "source_ids": [
+      "GCE-027",
+      "GCE-025",
+      "GCE-002",
+      "GCE-001",
+      "GCE-003",
+      "GCE-024"
+    ]
+  },
+  {
+    "chunk_id": "ts-11-masalah-startup::chunk-02",
+    "document_id": "ts-11-masalah-startup",
+    "title": "Masalah Startup",
+    "category": "vm_lifecycle",
+    "text": "- Startup script error fatal yang menghentikan proses boot atau gagal menjalankan service yang diharapkan. - Operasi disk yang sedang berjalan (clone/snapshot) memblokir startup (GCE-025). - Image lama tidak kompatibel dengan machine type baru setelah migrasi generasi (mis. isu initramfs SUSE, isu Gen1/2→Gen3 Windows terkait binding boot drive ke tipe interface disk lama) — kondisional (GCE-002). Pemeriksaan aman (read-only): 1. Periksa serial port output (BIOS, bootloader, kernel mencetak pesan debug ke serial port tanpa perlu VM fully boot) — GCE-027, GCE-001. 2. Ambil VM screenshot untuk melihat kondisi visual boot (read-only) — GCE-003, GCE-027. 3. Jika tersedia, gunakan interactive serial console untuk login dan debug dari dalam tanpa menunggu boot selesai (GCE-027).",
+    "url": "https://docs.cloud.google.com/compute/docs/troubleshooting/vm-startup",
+    "source_ids": [
+      "GCE-027",
+      "GCE-025",
+      "GCE-002",
+      "GCE-001",
+      "GCE-003",
+      "GCE-024"
+    ]
+  },
+  {
+    "chunk_id": "ts-11-masalah-startup::chunk-03",
+    "document_id": "ts-11-masalah-startup",
+    "title": "Masalah Startup",
+    "category": "vm_lifecycle",
+    "text": "2. Ambil VM screenshot untuk melihat kondisi visual boot (read-only) — GCE-003, GCE-027. 3. Jika tersedia, gunakan interactive serial console untuk login dan debug dari dalam tanpa menunggu boot selesai (GCE-027). Langkah diagnosis bertahap: 1. Baca pesan error di serial console — identifikasi apakah ini di tahap BIOS/bootloader/kernel/startup script. 2. Jika disk penuh → rujuk topik 9. 3. Jika filesystem/MBR corrupt → buat snapshot dahulu, lalu lepas disk dan pasang sebagai secondary disk ke instance debug (image berbeda untuk menghindari konflik GUID, zone yang sama) untuk menjalankan fsck/xfs_repair (Linux) atau chkdsk/sfc/dism (Windows), lalu pasang kembali (GCE-027, GCE-003).",
+    "url": "https://docs.cloud.google.com/compute/docs/troubleshooting/vm-startup",
+    "source_ids": [
+      "GCE-027",
+      "GCE-025",
+      "GCE-002",
+      "GCE-001",
+      "GCE-003",
+      "GCE-024"
+    ]
+  },
+  {
+    "chunk_id": "ts-11-masalah-startup::chunk-04",
+    "document_id": "ts-11-masalah-startup",
+    "title": "Masalah Startup",
+    "category": "vm_lifecycle",
+    "text": "3. Jika filesystem/MBR corrupt → buat snapshot dahulu, lalu lepas disk dan pasang sebagai secondary disk ke instance debug (image berbeda untuk menghindari konflik GUID, zone yang sama) untuk menjalankan fsck/xfs_repair (Linux) atau chkdsk/sfc/dism (Windows), lalu pasang kembali (GCE-027, GCE-003). 4. Jika dicurigai startup script bermasalah → identifikasi dan nonaktifkan sementara startup script (via metadata) untuk isolasi, uji boot tanpa script, baru selidiki isi script-nya. Solusi/workaround: Perbaikan filesystem/bootloader via recovery VM; revisi startup script; sesuaikan konfigurasi sebelum migrasi machine type (mis. regenerate initramfs, jalankan sppnp.dll,Sysprep_Generalize_Pnp sebelum migrasi Windows Gen3+) sesuai known issue yang relevan (GCE-002).",
+    "url": "https://docs.cloud.google.com/compute/docs/troubleshooting/vm-startup",
+    "source_ids": [
+      "GCE-027",
+      "GCE-025",
+      "GCE-002",
+      "GCE-001",
+      "GCE-003",
+      "GCE-024"
+    ]
+  },
+  {
+    "chunk_id": "ts-11-masalah-startup::chunk-05",
+    "document_id": "ts-11-masalah-startup",
+    "title": "Masalah Startup",
+    "category": "vm_lifecycle",
+    "text": "Solusi/workaround: Perbaikan filesystem/bootloader via recovery VM; revisi startup script; sesuaikan konfigurasi sebelum migrasi machine type (mis. regenerate initramfs, jalankan sppnp.dll,Sysprep_Generalize_Pnp sebelum migrasi Windows Gen3+) sesuai known issue yang relevan (GCE-002). Risiko/catatan: Operasi lepas-pasang disk antarinstance berisiko downtime dan harus dilakukan di zone yang sama; selalu snapshot dahulu untuk mencegah kehilangan data (GCE-027, GCE-024). Prosedur recovery Windows butuh image Windows Server yang berbeda dari VM bermasalah untuk menghindari konflik GUID (GCE-003). Verifikasi: VM berhasil boot hingga status RUNNING yang responsif dan dapat diakses via SSH/RDP.",
+    "url": "https://docs.cloud.google.com/compute/docs/troubleshooting/vm-startup",
+    "source_ids": [
+      "GCE-027",
+      "GCE-025",
+      "GCE-002",
+      "GCE-001",
+      "GCE-003",
+      "GCE-024"
+    ]
+  },
+  {
+    "chunk_id": "ts-11-masalah-startup::chunk-06",
+    "document_id": "ts-11-masalah-startup",
+    "title": "Masalah Startup",
+    "category": "vm_lifecycle",
+    "text": "Risiko/catatan: Operasi lepas-pasang disk antarinstance berisiko downtime dan harus dilakukan di zone yang sama; selalu snapshot dahulu untuk mencegah kehilangan data (GCE-027, GCE-024). Prosedur recovery Windows butuh image Windows Server yang berbeda dari VM bermasalah untuk menghindari konflik GUID (GCE-003). Verifikasi: VM berhasil boot hingga status RUNNING yang responsif dan dapat diakses via SSH/RDP. Eskalasi/alternatif: Jika recovery manual tidak berhasil, pertimbangkan membangun ulang VM dari image/snapshot yang diketahui baik, atau eskalasi ke Google Cloud Support dengan menyertakan log serial console. Sumber: GCE-001, GCE-002, GCE-003, GCE-024, GCE-025, GCE-027.",
+    "url": "https://docs.cloud.google.com/compute/docs/troubleshooting/vm-startup",
+    "source_ids": [
+      "GCE-027",
+      "GCE-025",
+      "GCE-002",
+      "GCE-001",
+      "GCE-003",
+      "GCE-024"
+    ]
+  },
+  {
+    "chunk_id": "ts-12-masalah-konfigurasi-jaringan::chunk-01",
+    "document_id": "ts-12-masalah-konfigurasi-jaringan",
+    "title": "Masalah Konfigurasi Jaringan",
+    "category": "networking",
+    "text": "Gejala/contoh error: Konektivitas antar-VM dalam VPC gagal; protocol forwarding error (\"hanya satu rule per target\"); DNS resolusi tidak sesuai harapan; performa jaringan menurun drastis pada beban tinggi. Pertanyaan klarifikasi: Apakah masalah antar-instance dalam VPC yang sama, lintas VPC (peering/Shared VPC), atau ke luar VPC? Apakah menggunakan multi-NIC? Apakah ada perubahan topologi jaringan/DNS baru-baru ini (termasuk migrasi ke zonal DNS)? Kemungkinan penyebab: - Firewall default-deny memblokir traffic yang seharusnya diizinkan, termasuk traffic internal (GCE-028). - Multiple forwarding rule pada target instance yang sama — sistem hanya mengizinkan satu rule per target (GCE-028).",
+    "url": "https://docs.cloud.google.com/compute/docs/troubleshooting/troubleshooting-networking",
+    "source_ids": [
+      "GCE-028",
+      "GCE-031",
+      "GCE-010",
+      "GCE-011",
+      "GCE-012"
+    ]
+  },
+  {
+    "chunk_id": "ts-12-masalah-konfigurasi-jaringan::chunk-02",
+    "document_id": "ts-12-masalah-konfigurasi-jaringan",
+    "title": "Masalah Konfigurasi Jaringan",
+    "category": "networking",
+    "text": "- Firewall default-deny memblokir traffic yang seharusnya diizinkan, termasuk traffic internal (GCE-028). - Multiple forwarding rule pada target instance yang sama — sistem hanya mengizinkan satu rule per target (GCE-028). - Proyek bermigrasi ke zonal DNS namun masih menampilkan setting DNS global akibat organization policy belum diterapkan dengan benar, atau metadata VM berisi nilai yang konflik (GCE-028). - RX/TX queue NIC tidak mencukupi untuk traffic rate tinggi, menyebabkan dropped packet (GCE-028). - Konfigurasi route/subnet salah untuk NIC tertentu pada VM multi-NIC (basics 3.7, GCE-031). Pemeriksaan aman (read-only): 1. Tampilkan firewall rule dan route yang berlaku untuk tiap network interface via Console (GCE-028).",
+    "url": "https://docs.cloud.google.com/compute/docs/troubleshooting/troubleshooting-networking",
+    "source_ids": [
+      "GCE-028",
+      "GCE-031",
+      "GCE-010",
+      "GCE-011",
+      "GCE-012"
+    ]
+  },
+  {
+    "chunk_id": "ts-12-masalah-konfigurasi-jaringan::chunk-03",
+    "document_id": "ts-12-masalah-konfigurasi-jaringan",
+    "title": "Masalah Konfigurasi Jaringan",
+    "category": "networking",
+    "text": "- Konfigurasi route/subnet salah untuk NIC tertentu pada VM multi-NIC (basics 3.7, GCE-031). Pemeriksaan aman (read-only): 1. Tampilkan firewall rule dan route yang berlaku untuk tiap network interface via Console (GCE-028). 2. Periksa konfigurasi DNS project/VM (global vs zonal) (GCE-028). 3. Periksa jumlah dan konfigurasi NIC pada VM terkait (GCE-031). Langkah diagnosis bertahap: 1. Pastikan firewall rule internal (default-allow-internal atau setara pada VPC custom) benar-benar ada dan tidak sengaja terhapus. 2. Jika protocol forwarding error → periksa apakah sudah ada rule lain pada target yang sama; hapus/gabungkan sesuai kebutuhan (perubahan ini berdampak pada traffic yang sudah berjalan, perlu konfirmasi).",
+    "url": "https://docs.cloud.google.com/compute/docs/troubleshooting/troubleshooting-networking",
+    "source_ids": [
+      "GCE-028",
+      "GCE-031",
+      "GCE-010",
+      "GCE-011",
+      "GCE-012"
+    ]
+  },
+  {
+    "chunk_id": "ts-12-masalah-konfigurasi-jaringan::chunk-04",
+    "document_id": "ts-12-masalah-konfigurasi-jaringan",
+    "title": "Masalah Konfigurasi Jaringan",
+    "category": "networking",
+    "text": "2. Jika protocol forwarding error → periksa apakah sudah ada rule lain pada target yang sama; hapus/gabungkan sesuai kebutuhan (perubahan ini berdampak pada traffic yang sudah berjalan, perlu konfirmasi). 3. Jika DNS tidak sesuai harapan → verifikasi organization policy zonal DNS dan metadata VM terkait. 4. Jika packet loss pada traffic tinggi → evaluasi kebutuhan RX/TX queue tambahan sesuai dokumentasi. Solusi/workaround: Perbaiki firewall rule internal, konsolidasikan forwarding rule, selaraskan kebijakan DNS, sesuaikan queue NIC atau gunakan driver jaringan yang direkomendasikan (gVNIC) untuk performa lebih baik.",
+    "url": "https://docs.cloud.google.com/compute/docs/troubleshooting/troubleshooting-networking",
+    "source_ids": [
+      "GCE-028",
+      "GCE-031",
+      "GCE-010",
+      "GCE-011",
+      "GCE-012"
+    ]
+  },
+  {
+    "chunk_id": "ts-12-masalah-konfigurasi-jaringan::chunk-05",
+    "document_id": "ts-12-masalah-konfigurasi-jaringan",
+    "title": "Masalah Konfigurasi Jaringan",
+    "category": "networking",
+    "text": "Solusi/workaround: Perbaiki firewall rule internal, konsolidasikan forwarding rule, selaraskan kebijakan DNS, sesuaikan queue NIC atau gunakan driver jaringan yang direkomendasikan (gVNIC) untuk performa lebih baik. Risiko/catatan: Perubahan pada firewall internal, route, atau DNS project dapat berdampak luas ke seluruh resource dalam VPC — bukan hanya satu VM. Selalu konfirmasi cakupan dampak sebelum menerapkan perubahan. Verifikasi: Konektivitas antar-resource yang terdampak kembali normal dan stabil pada pengujian berulang. Eskalasi/alternatif: Untuk topologi jaringan kompleks (Shared VPC lintas organisasi, hybrid connectivity), eskalasi ke tim arsitektur jaringan internal atau Google Cloud Support. Sumber: GCE-010, GCE-011, GCE-012, GCE-028, GCE-031.",
+    "url": "https://docs.cloud.google.com/compute/docs/troubleshooting/troubleshooting-networking",
+    "source_ids": [
+      "GCE-028",
+      "GCE-031",
+      "GCE-010",
+      "GCE-011",
+      "GCE-012"
+    ]
+  },
+  {
+    "chunk_id": "ts-13-catatan-umum-lintas-topik::chunk-01",
+    "document_id": "ts-13-catatan-umum-lintas-topik",
+    "title": "Catatan Umum Lintas Topik Troubleshooting",
+    "category": "general_troubleshooting",
+    "text": "- Seluruh known issue yang dikutip dari GCE-002 bersifat kondisional (terikat versi image/guest agent/machine family/OS tertentu) dan dinamis (daftar berubah seiring waktu) — selalu verifikasi ulang kondisi spesifik pengguna sebelum menyimpulkan penyebab, dan jangan menganggap known issue yang tercatat sebagai halaman masih online berarti bug tersebut masih terjadi pada versi software pengguna saat ini. - Topik yang memerlukan riset lanjutan sebelum dianggap benar-benar lengkap: detail BSOD/offline repair Windows (GCE-003 ditandai \"truncated\" oleh tool fetch) dan daftar permission persis per IAM role Compute Engine (GCE-016). Status: Belum lengkap — perlu riset lanjutan (lihat research_notes.md).",
+    "url": "https://docs.cloud.google.com/compute/docs/troubleshooting/known-issues",
+    "source_ids": [
+      "GCE-002",
+      "GCE-003",
+      "GCE-016"
+    ]
+  }
+]

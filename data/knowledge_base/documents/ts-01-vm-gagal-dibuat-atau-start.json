@@ -1,0 +1,25 @@
+{
+  "document_id": "ts-01-vm-gagal-dibuat-atau-start",
+  "title": "VM Gagal Dibuat atau Start",
+  "category": "vm_lifecycle",
+  "source_ids": [
+    "GCE-025",
+    "GCE-026",
+    "GCE-005",
+    "GCE-017",
+    "GCE-027",
+    "GCE-002",
+    "GCE-022"
+  ],
+  "url": "https://docs.cloud.google.com/compute/docs/troubleshooting/troubleshooting-vm-creation",
+  "source_urls": {
+    "GCE-025": "https://docs.cloud.google.com/compute/docs/troubleshooting/troubleshooting-vm-creation",
+    "GCE-026": "https://docs.cloud.google.com/compute/docs/troubleshooting/troubleshooting-resource-availability",
+    "GCE-005": "https://docs.cloud.google.com/compute/docs/instances/instance-life-cycle",
+    "GCE-017": "https://docs.cloud.google.com/compute/quotas",
+    "GCE-027": "https://docs.cloud.google.com/compute/docs/troubleshooting/vm-startup",
+    "GCE-002": "https://docs.cloud.google.com/compute/docs/troubleshooting/known-issues",
+    "GCE-022": "https://docs.cloud.google.com/compute/docs/troubleshooting"
+  },
+  "text": "**Gejala/contoh error:** `Quota QUOTA_NAME exceeded. Limit: QUOTA_LIMIT in region REGION`; `ZONE_RESOURCE_POOL_EXHAUSTED`; `notFound`/`does not exist in zone`; `Required 'compute.regions.get' permission...`; instance tetap di status TERMINATED setelah mencoba start (GCE-025, GCE-026, GCE-005).\n\n**Pertanyaan klarifikasi:** Apakah ini pembuatan VM baru atau start VM yang sudah ada? Machine type, image, zone/region yang dipilih? Pesan error lengkap (teks persis)? Apakah baru pertama kali dibuat di project ini atau sebelumnya pernah berhasil?\n\n**Kemungkinan penyebab (hipotesis, bukan urutan pasti):**\n- Quota project/region habis (CPU, VM, IP, disk) — GCE-017, GCE-025.\n- Ketersediaan kapasitas fisik zone habis (`ZONE_RESOURCE_POOL_EXHAUSTED` dan varian `cpu_availability`, `memory_availability`, `local_ssd_availability`, `gpu_availability`) — GCE-026.\n- Zone yang dipilih tidak menyediakan machine type/konfigurasi tersebut — GCE-025.\n- IAM permission tidak memadai untuk principal yang membuat VM — GCE-025.\n- Nama resource bentrok (duplicate name), jumlah NIC melebihi batas machine type, atau CPU platform tidak kompatibel — GCE-025.\n- Boot disk penuh/filesystem corrupt/MBR invalid (khusus kasus \"start\" VM lama yang gagal) — GCE-027.\n\n**Pemeriksaan aman (paling tidak invasif dahulu):**\n1. Baca ulang pesan error lengkap bersama pengguna — teks error GCP biasanya menyebut `reason` (quota vs resource_availability) secara eksplisit (GCE-017, GCE-026).\n2. Minta pengguna memeriksa halaman Quotas (read-only) untuk resource terkait region tersebut.\n3. Minta pengguna memeriksa status instance (RUNNING/TERMINATED/REPAIRING) via Console tanpa mengubah apa pun.\n\n**Langkah diagnosis bertahap:**\n1. Jika error menyebut `QUOTA_EXCEEDED`/`rateLimitExceeded` → arahkan ke topik 8 (Quota exceeded).\n2. Jika error menyebut `ZONE_RESOURCE_POOL_EXHAUSTED` atau sejenis → ini bukan quota; sarankan opsi non-destruktif: coba zone lain dalam region yang sama, kurangi spesifikasi (vCPU/Local SSD/GPU), atau pertimbangkan Flex-start/Spot VM (GCE-026).\n3. Jika error permission → arahkan ke topik 7 (Permission denied); identifikasi principal dan permission yang hilang.\n4. Jika ini kasus \"start\" VM lama yang gagal (bukan create baru) dan status tetap TERMINATED → periksa kemungkinan boot disk penuh atau filesystem corrupt via serial console (lihat topik 11, Masalah startup), bukan langsung restart paksa berulang.\n\n**Solusi/workaround:**\n- Quota: ajukan permintaan peningkatan quota resmi via Console (tidak tersedia untuk akun Free Trial) — GCE-017.\n- Resource availability: coba zone/region lain, ubah konfigurasi, atau buat reservation terlebih dahulu sebagai langkah preventif — GCE-026.\n- Permission: minta administrator project memberi role yang sesuai prinsip least privilege (lihat topik 7).\n\n**Risiko/catatan:** Jangan menyamakan quota exceeded dengan resource availability — jalur solusinya berbeda (GCE-017, GCE-026). Mengubah machine type pada instance yang sudah ada bisa memicu masalah boot terpisah (lihat known issue regenerasi initramfs SUSE, migrasi Gen1/2→Gen3 Windows — GCE-002); perubahan konfigurasi apa pun pada instance yang sudah ada perlu konfirmasi pengguna karena berisiko downtime.\n\n**Verifikasi:** Instance berhasil mencapai status RUNNING dan dapat diakses (SSH/RDP) sesuai metode yang digunakan.\n\n**Eskalasi/alternatif:** Jika resource availability terus terjadi di berbagai zone/region, atau jika pesan error tidak cocok dengan pola di atas, arahkan ke Google Cloud Support.\n\n**Sumber:** GCE-005, GCE-017, GCE-022, GCE-025, GCE-026, GCE-002."
+}

@@ -1,0 +1,19 @@
+{
+  "document_id": "basics-11-iam-role-permission-dan-prinsip-least-privilege",
+  "title": "IAM Role, Permission, dan Prinsip Least Privilege",
+  "category": "iam_permission",
+  "source_ids": [
+    "GCE-015",
+    "GCE-016",
+    "GCE-020",
+    "GCE-021"
+  ],
+  "url": "https://docs.cloud.google.com/iam/docs/overview",
+  "source_urls": {
+    "GCE-015": "https://docs.cloud.google.com/iam/docs/overview",
+    "GCE-016": "https://docs.cloud.google.com/iam/docs/understanding-roles",
+    "GCE-020": "https://docs.cloud.google.com/compute/docs/oslogin",
+    "GCE-021": "https://docs.cloud.google.com/iap/docs/using-tcp-forwarding"
+  },
+  "text": "**Komponen IAM** (GCE-015):\n- **Principal** — identitas yang diberi akses (pengguna, grup, service account).\n- **Permission** — operasi spesifik dalam format `service.resource.verb` (contoh: `resourcemanager.projects.list`); tidak diberikan langsung ke principal.\n- **Role** — kumpulan permission; tiga tipe: **predefined** (dikelola Google), **custom** (dibuat sendiri), **basic/primitive** (untuk testing, sangat luas cakupannya) (GCE-016).\n- **Policy (allow policy)** — objek YAML/JSON yang mengikat principal ke role pada resource tertentu (role binding), dengan mekanisme pewarisan dari resource induk (GCE-015).\n\n**Contoh role terkait Compute Engine** (GCE-016) — _nama role sesuai konvensi resmi; daftar permission detail per role perlu dicek langsung di halaman IAM roles Compute Engine bila presisi tinggi diperlukan, lihat `research_notes.md`_:\n- `roles/compute.admin` — kontrol penuh atas resource Compute Engine.\n- `roles/compute.instanceAdmin` — manajemen instance dengan cakupan lebih sempit dari admin penuh.\n- `roles/compute.viewer` — akses baca saja.\n- `roles/iam.serviceAccountUser` — mengizinkan impersonasi/penggunaan service account.\n- `roles/compute.osLogin` — login OS Login tanpa `sudo`.\n- `roles/compute.osAdminLogin` — login OS Login dengan `sudo` (GCE-020).\n- `roles/iap.tunnelResourceAccessor` — akses tunnel IAP TCP forwarding (GCE-021).\n\n**Least privilege:** Prinsipnya adalah memberi principal hanya permission minimum yang dibutuhkan, lebih disarankan menggunakan predefined/custom role yang tepat sasaran dibanding basic role (`Owner`/`Editor`/`Viewer`) yang terlalu luas.\n\n**Mengapa penting saat troubleshooting?** Kasus \"permission denied\" harus diuraikan menjadi: siapa principal-nya, resource apa yang diakses, permission apa yang dibutuhkan, dan role apa yang sudah/belum diberikan — bukan sekadar menyarankan pemberian role admin/Owner secara umum (lihat `troubleshooting_topics.md`)."
+}

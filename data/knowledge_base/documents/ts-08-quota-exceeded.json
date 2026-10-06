@@ -1,0 +1,17 @@
+{
+  "document_id": "ts-08-quota-exceeded",
+  "title": "Quota Exceeded",
+  "category": "quota",
+  "source_ids": [
+    "GCE-017",
+    "GCE-029",
+    "GCE-026"
+  ],
+  "url": "https://docs.cloud.google.com/compute/quotas",
+  "source_urls": {
+    "GCE-017": "https://docs.cloud.google.com/compute/quotas",
+    "GCE-029": "https://docs.cloud.google.com/compute/docs/troubleshooting/troubleshoot-operation-limits",
+    "GCE-026": "https://docs.cloud.google.com/compute/docs/troubleshooting/troubleshooting-resource-availability"
+  },
+  "text": "**Gejala/contoh error:** `Quota QUOTA_NAME exceeded. Limit: QUOTA_LIMIT in region REGION`; error `rateLimitExceeded` (403) dengan domain `usageLimits` saat memanggil API berulang (GCE-017, GCE-029).\n\n**Pertanyaan klarifikasi:** Resource apa yang disebut dalam pesan error (CPU, IP, disk, instance)? Region mana? Apakah ini terjadi saat create resource baru, atau saat memanggil API berulang kali dalam waktu singkat (menandakan concurrent operation quota, bukan resource quota)?\n\n**Kemungkinan penyebab:**\n- **Quota resource** (CPU/VM/IP/disk) per region/project telah mencapai batas (GCE-017).\n- **Concurrent operation quota** — terlalu banyak operasi API berjalan bersamaan (mis. memanggil `instances.stop` berulang dalam waktu singkat) menghasilkan `rateLimitExceeded`, berbeda dari quota resource (GCE-029).\n- Mengira resource availability error sebagai quota (lihat basics 3.12) — periksa teks error dengan cermat.\n\n**Pemeriksaan aman:**\n1. Baca field `reason` pada error API untuk membedakan `QUOTA_EXCEEDED` vs `rateLimitExceeded` vs resource availability (read-only).\n2. Lihat Quotas page di Console, filter sesuai service/resource/region (read-only) — GCE-017.\n3. Untuk dugaan concurrent operation quota: cari log dengan `serviceName=\"compute.googleapis.com\"` dan pesan \"Rate Limit Exceeded\" di Logs Explorer (read-only) — GCE-029.\n\n**Langkah diagnosis bertahap:**\n1. Jika quota resource habis → ajukan permintaan peningkatan quota resmi (tidak berlaku untuk akun Free Trial) — GCE-017.\n2. Jika concurrent operation quota → identifikasi method API dan lokasi dari audit log, lalu terapkan exponential backoff, kurangi polling, atau sebar operasi lintas project (GCE-029). Dokumentasi menegaskan \"system limits can't be modified\" untuk jenis quota ini — fokus pada optimasi pemanggilan API, bukan permintaan kenaikan limit.\n\n**Solusi/workaround:** Lihat langkah di atas sesuai jenis quota.\n\n**Risiko/catatan:** Jangan menyamakan quota exceeded dengan resource availability (lihat topik 1 dan basics 3.12) — keduanya butuh jalur solusi berbeda.\n\n**Verifikasi:** Operasi yang sebelumnya gagal kini berhasil setelah quota ditingkatkan atau pola pemanggilan API dioptimalkan.\n\n**Eskalasi/alternatif:** Jika permintaan peningkatan quota ditolak atau dibutuhkan kapasitas besar mendadak, hubungi Google Cloud Sales/Support untuk perencanaan kapasitas.\n\n**Sumber:** GCE-017, GCE-029, GCE-026."
+}

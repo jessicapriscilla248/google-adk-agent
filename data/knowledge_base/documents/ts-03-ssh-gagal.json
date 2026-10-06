@@ -1,0 +1,21 @@
+{
+  "document_id": "ts-03-ssh-gagal",
+  "title": "SSH Gagal",
+  "category": "ssh_rdp",
+  "source_ids": [
+    "GCE-018",
+    "GCE-011",
+    "GCE-021",
+    "GCE-020",
+    "GCE-001"
+  ],
+  "url": "https://docs.cloud.google.com/compute/docs/troubleshooting/troubleshooting-ssh-errors",
+  "source_urls": {
+    "GCE-018": "https://docs.cloud.google.com/compute/docs/troubleshooting/troubleshooting-ssh-errors",
+    "GCE-011": "https://docs.cloud.google.com/firewall/docs/firewalls",
+    "GCE-021": "https://docs.cloud.google.com/iap/docs/using-tcp-forwarding",
+    "GCE-020": "https://docs.cloud.google.com/compute/docs/oslogin",
+    "GCE-001": "https://docs.cloud.google.com/compute/docs/troubleshooting/general-tips"
+  },
+  "text": "**Gejala/contoh error:** `Permission denied (publickey)`; `Could not connect, retrying...`; SSH-in-Browser `Unauthorized Error 401` (GCE-018).\n\n**Pertanyaan klarifikasi:** OS Linux apa/image apa? Metode koneksi (gcloud CLI, SSH-in-Browser/Console, IAP tunnel, SSH client manual)? Apakah OS Login diaktifkan di project/instance? Pesan error persis? Apakah pengguna bagian dari organisasi Google Workspace?\n\n**Kemungkinan penyebab (GCE-018):**\n- Ketidakcocokan metode kunci: memakai metadata SSH key pada VM dengan OS Login aktif, atau sebaliknya.\n- Principal tidak memiliki IAM role OS Login (`roles/compute.osLogin` / `roles/compute.osAdminLogin`) — lihat basics 3.11.\n- Mencoba login dengan akun lokal non-Google pada VM yang memakai OS Login.\n- Proses boot belum selesai, atau VM boot ke emergency mode.\n- Service `google-guest-agent.service` tidak berjalan atau Linux Guest Agent tidak terpasang.\n- Tidak ada firewall rule yang mengizinkan port 22 untuk sumber yang relevan.\n- Disk penuh atau out-of-memory di guest OS.\n- Kebijakan Google Workspace membatasi akses SSH-in-Browser (error 401).\n\n**Pemeriksaan aman:**\n1. Jalankan tool diagnosis resmi: `gcloud compute ssh VM_NAME --troubleshoot` (opsional tambahkan `--tunnel-through-iap` bila akses via IAP) — tool ini memeriksa izin IAM, konektivitas jaringan, status CPU VM, dan firewall port SSH tanpa mengubah konfigurasi (GCE-018).\n2. Periksa status OS Login pada project/instance metadata (read-only).\n3. Periksa firewall rule yang berlaku untuk port 22 (read-only) — GCE-011, GCE-018.\n\n**Langkah diagnosis bertahap:**\n1. Jalankan `--troubleshoot` dan catat bagian mana yang gagal (IAM permission, network, CPU, firewall).\n2. Jika IAM permission gagal → berikan role OS Login yang sesuai sesuai least privilege.\n3. Jika mismatch OS Login vs metadata key → selaraskan metode (aktifkan/nonaktifkan OS Login sesuai kebutuhan, atau pindahkan kunci ke tempat yang sesuai) — perubahan ini memengaruhi akses, informasikan dampaknya ke pengguna terlebih dulu.\n4. Jika \"Could not connect, retrying\" → periksa serial console untuk status boot dan status `google-guest-agent.service`.\n5. Jika error 401 SSH-in-Browser → ini terkait kebijakan Workspace organisasi, bukan konfigurasi VM; arahkan ke admin Workspace.\n\n**Solusi/workaround:**\n- Aktifkan guest agent jika disabled: `systemctl enable google-guest-agent.service` dan `systemctl start google-guest-agent.service` (perubahan pada guest OS; minta konfirmasi pengguna karena dijalankan via akses lain seperti serial console).\n- Tambahkan firewall rule port 22 bila memang belum ada **dan** pengguna memahami cakupan source range yang diizinkan (jangan sarankan `0.0.0.0/0` tanpa konteks keamanan yang jelas).\n- Gunakan IAP TCP forwarding sebagai alternatif bila VM tidak punya external IP (GCE-021).\n\n**Risiko/catatan:** Menonaktifkan/mengaktifkan OS Login memengaruhi seluruh pengguna pada instance, bukan hanya satu orang — jelaskan dampak sebelum mengubah. Jangan menyarankan membuka firewall ke `0.0.0.0/0` sebagai solusi umum.\n\n**Verifikasi:** Re-run `gcloud compute ssh VM_NAME --troubleshoot` menunjukkan semua pemeriksaan lulus, dan SSH berhasil connect.\n\n**Eskalasi/alternatif:** Jika seluruh pemeriksaan tool troubleshoot lulus namun SSH tetap gagal, periksa lebih dalam via serial console interaktif atau eskalasi ke Google Cloud Support.\n\n**Sumber:** GCE-018, GCE-020, GCE-021, GCE-011, GCE-001."
+}

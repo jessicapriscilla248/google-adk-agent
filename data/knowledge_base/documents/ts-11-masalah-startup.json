@@ -1,0 +1,23 @@
+{
+  "document_id": "ts-11-masalah-startup",
+  "title": "Masalah Startup",
+  "category": "vm_lifecycle",
+  "source_ids": [
+    "GCE-027",
+    "GCE-025",
+    "GCE-002",
+    "GCE-001",
+    "GCE-003",
+    "GCE-024"
+  ],
+  "url": "https://docs.cloud.google.com/compute/docs/troubleshooting/vm-startup",
+  "source_urls": {
+    "GCE-027": "https://docs.cloud.google.com/compute/docs/troubleshooting/vm-startup",
+    "GCE-025": "https://docs.cloud.google.com/compute/docs/troubleshooting/troubleshooting-vm-creation",
+    "GCE-002": "https://docs.cloud.google.com/compute/docs/troubleshooting/known-issues",
+    "GCE-001": "https://docs.cloud.google.com/compute/docs/troubleshooting/general-tips",
+    "GCE-003": "https://docs.cloud.google.com/compute/docs/troubleshooting/troubleshooting-windows",
+    "GCE-024": "https://docs.cloud.google.com/compute/docs/troubleshooting/troubleshooting-disk-full-resize"
+  },
+  "text": "**Gejala/contoh error:** VM stuck di boot, tidak pernah mencapai RUNNING yang responsif; kernel panic; fstab error; MBR invalid; startup script gagal sehingga service tidak berjalan.\n\n**Pertanyaan klarifikasi:** Linux atau Windows? Apakah menggunakan startup script, dan apa isinya secara umum? Apakah ini VM baru atau VM lama yang baru saja diubah (resize disk, ganti machine type, update OS)? Apakah bisa melihat serial console / screenshot?\n\n**Kemungkinan penyebab:**\n- Boot disk penuh dan OS tidak mendukung auto-resize filesystem (GCE-027).\n- Filesystem corrupt atau MBR/bootloader invalid (GCE-027).\n- Startup script error fatal yang menghentikan proses boot atau gagal menjalankan service yang diharapkan.\n- Operasi disk yang sedang berjalan (clone/snapshot) memblokir startup (GCE-025).\n- Image lama tidak kompatibel dengan machine type baru setelah migrasi generasi (mis. isu initramfs SUSE, isu Gen1/2→Gen3 Windows terkait binding boot drive ke tipe interface disk lama) — kondisional (GCE-002).\n\n**Pemeriksaan aman (read-only):**\n1. Periksa serial port output (BIOS, bootloader, kernel mencetak pesan debug ke serial port tanpa perlu VM fully boot) — GCE-027, GCE-001.\n2. Ambil VM screenshot untuk melihat kondisi visual boot (read-only) — GCE-003, GCE-027.\n3. Jika tersedia, gunakan interactive serial console untuk login dan debug dari dalam tanpa menunggu boot selesai (GCE-027).\n\n**Langkah diagnosis bertahap:**\n1. Baca pesan error di serial console — identifikasi apakah ini di tahap BIOS/bootloader/kernel/startup script.\n2. Jika disk penuh → rujuk topik 9.\n3. Jika filesystem/MBR corrupt → **buat snapshot dahulu**, lalu lepas disk dan pasang sebagai secondary disk ke instance debug (image berbeda untuk menghindari konflik GUID, zone yang sama) untuk menjalankan `fsck`/`xfs_repair` (Linux) atau `chkdsk`/`sfc`/`dism` (Windows), lalu pasang kembali (GCE-027, GCE-003).\n4. Jika dicurigai startup script bermasalah → identifikasi dan nonaktifkan sementara startup script (via metadata) untuk isolasi, uji boot tanpa script, baru selidiki isi script-nya.\n\n**Solusi/workaround:** Perbaikan filesystem/bootloader via recovery VM; revisi startup script; sesuaikan konfigurasi sebelum migrasi machine type (mis. regenerate initramfs, jalankan `sppnp.dll,Sysprep_Generalize_Pnp` sebelum migrasi Windows Gen3+) sesuai known issue yang relevan (GCE-002).\n\n**Risiko/catatan:** Operasi lepas-pasang disk antarinstance berisiko downtime dan harus dilakukan di zone yang sama; selalu snapshot dahulu untuk mencegah kehilangan data (GCE-027, GCE-024). Prosedur recovery Windows butuh image Windows Server yang berbeda dari VM bermasalah untuk menghindari konflik GUID (GCE-003).\n\n**Verifikasi:** VM berhasil boot hingga status RUNNING yang responsif dan dapat diakses via SSH/RDP.\n\n**Eskalasi/alternatif:** Jika recovery manual tidak berhasil, pertimbangkan membangun ulang VM dari image/snapshot yang diketahui baik, atau eskalasi ke Google Cloud Support dengan menyertakan log serial console.\n\n**Sumber:** GCE-001, GCE-002, GCE-003, GCE-024, GCE-025, GCE-027."
+}

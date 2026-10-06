@@ -1,0 +1,42 @@
+[
+  {"id": "t01-01", "topik": "ts-01-vm-gagal-dibuat-atau-start", "pemicu": ["tidak mau start", "gagal start", "tidak bisa start"], "perluasan": ["start", "quota", "zone"]},
+  {"id": "t01-02", "topik": "ts-01-vm-gagal-dibuat-atau-start", "pemicu": ["vm mati terus", "gagal dibuat", "tidak bisa dibuat"], "perluasan": ["quota", "zone", "terminated"]},
+
+  {"id": "t02-01", "topik": "ts-02-vm-tidak-bisa-diakses-umum", "pemicu": ["tidak bisa diakses", "ga bisa diakses", "tidak bisa akses vm"], "perluasan": ["akses", "status", "ping"]},
+  {"id": "t02-02", "topik": "ts-02-vm-tidak-bisa-diakses-umum", "pemicu": ["vm tidak merespon", "vm tidak respon", "vm ga respon"], "perluasan": ["ping", "status", "firewall"]},
+
+  {"id": "t03-01", "topik": "ts-03-ssh-gagal", "pemicu": ["ga bisa ssh", "gabisa ssh", "tidak bisa ssh"], "perluasan": ["ssh", "publickey", "os login"]},
+  {"id": "t03-02", "topik": "ts-03-ssh-gagal", "pemicu": ["ssh gagal", "ssh error", "ssh bermasalah"], "perluasan": ["ssh", "publickey", "boot"]},
+  {"id": "t03-03", "topik": "ts-03-ssh-gagal", "pemicu": ["ssh ditolak", "permission denied ssh"], "perluasan": ["ssh", "publickey", "port 22"]},
+
+  {"id": "t04-01", "topik": "ts-04-rdp-gagal", "pemicu": ["rdp gagal", "rdp error", "ga bisa rdp", "tidak bisa rdp"], "perluasan": ["rdp", "sysprep", "password"]},
+  {"id": "t04-02", "topik": "ts-04-rdp-gagal", "pemicu": ["layar hitam rdp", "remote desktop gagal", "remote desktop error"], "perluasan": ["rdp", "windows", "connect"]},
+
+  {"id": "t05-01", "topik": "ts-05-tidak-bisa-terhubung-ke-internet", "pemicu": ["akses internet", "mengakses internet"], "perluasan": ["internet", "ping", "curl"]},
+  {"id": "t05-02", "topik": "ts-05-tidak-bisa-terhubung-ke-internet", "pemicu": ["connect internet", "konek internet", "terhubung internet"], "perluasan": ["internet", "curl", "ping"]},
+  {"id": "t05-03", "topik": "ts-05-tidak-bisa-terhubung-ke-internet", "pemicu": ["internet mati", "internet putus", "koneksi internet"], "perluasan": ["internet", "external ip", "cloud nat"]},
+  {"id": "t05-04", "topik": "ts-05-tidak-bisa-terhubung-ke-internet", "pemicu": ["gabisa internetan", "ga bisa internetan", "tidak bisa internetan"], "perluasan": ["internet", "curl", "ping"]},
+
+  {"id": "t06-01", "topik": "ts-06-firewall-memblokir-koneksi", "pemicu": ["firewall nutup", "firewall blokir", "firewall menutup", "firewall menghalangi"], "perluasan": ["firewall", "port", "rule"]},
+  {"id": "t06-02", "topik": "ts-06-firewall-memblokir-koneksi", "pemicu": ["koneksi diblokir firewall", "firewall timeout"], "perluasan": ["firewall", "timeout", "rule"]},
+
+  {"id": "t07-01", "topik": "ts-07-permission-denied", "pemicu": ["permission ditolak", "akses ditolak", "kurang izin", "kurang akses"], "perluasan": ["permission", "iam", "role"]},
+  {"id": "t07-02", "topik": "ts-07-permission-denied", "pemicu": ["error iam", "izin iam kurang"], "perluasan": ["iam", "role", "service account"]},
+
+  {"id": "t08-01", "topik": "ts-08-quota-exceeded", "pemicu": ["kena limit", "limit quota", "quota habis", "quota penuh"], "perluasan": ["quota", "limit", "backoff"]},
+  {"id": "t08-02", "topik": "ts-08-quota-exceeded", "pemicu": ["rate limit", "terlalu banyak request", "terlalu banyak panggilan"], "perluasan": ["quota", "ratelimitexceeded", "concurrent"]},
+
+  {"id": "t09-01", "topik": "ts-09-disk-penuh", "pemicu": ["disk penuh", "disk full", "storage penuh"], "perluasan": ["disk", "space", "resize"]},
+  {"id": "t09-02", "topik": "ts-09-disk-penuh", "pemicu": ["no space", "kehabisan ruang", "ruang habis"], "perluasan": ["disk", "space", "filesystem"]},
+
+  {"id": "t10-01", "topik": "ts-10-vm-lambat", "pemicu": ["vm lambat", "vm lemot", "vm lelet"], "perluasan": ["lambat", "cpu", "memory"]},
+  {"id": "t10-02", "topik": "ts-10-vm-lambat", "pemicu": ["performa turun", "performa menurun", "aplikasi lambat"], "perluasan": ["lambat", "disk i/o", "network"]},
+
+  {"id": "t11-01", "topik": "ts-11-masalah-startup", "pemicu": ["gagal boot", "tidak bisa boot"], "perluasan": ["boot", "startup", "serial console"]},
+  {"id": "t11-02", "topik": "ts-11-masalah-startup", "pemicu": ["stuck boot", "macet boot", "stuck booting", "macet booting"], "perluasan": ["boot", "startup", "running"]},
+  {"id": "t11-03", "topik": "ts-11-masalah-startup", "pemicu": ["gagal nyala", "tidak mau nyala", "tidak bisa nyala"], "perluasan": ["boot", "startup", "running"]},
+  {"id": "t11-04", "topik": "ts-11-masalah-startup", "pemicu": ["tidak pernah running", "ga pernah running"], "perluasan": ["running", "boot", "startup"]},
+
+  {"id": "t12-01", "topik": "ts-12-masalah-konfigurasi-jaringan", "pemicu": ["vpc gagal", "konektivitas vpc", "jaringan vpc bermasalah"], "perluasan": ["vpc", "forwarding", "firewall"]},
+  {"id": "t12-02", "topik": "ts-12-masalah-konfigurasi-jaringan", "pemicu": ["dns bermasalah", "dns error", "dns tidak resolve"], "perluasan": ["dns", "vpc", "firewall"]}
+]

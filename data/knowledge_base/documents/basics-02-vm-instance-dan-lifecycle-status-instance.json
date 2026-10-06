@@ -1,0 +1,13 @@
+{
+  "document_id": "basics-02-vm-instance-dan-lifecycle-status-instance",
+  "title": "VM Instance dan Lifecycle/Status Instance",
+  "category": "vm_lifecycle",
+  "source_ids": [
+    "GCE-005"
+  ],
+  "url": "https://docs.cloud.google.com/compute/docs/instances/instance-life-cycle",
+  "source_urls": {
+    "GCE-005": "https://docs.cloud.google.com/compute/docs/instances/instance-life-cycle"
+  },
+  "text": "**Definisi:** VM instance adalah mesin virtual yang berjalan pada infrastruktur Compute Engine, memiliki status (state) yang berubah sepanjang siklus hidupnya (GCE-005).\n\n**Status utama** (GCE-005):\n- **PROVISIONING** — Compute Engine mengalokasikan resource untuk instance.\n- **STAGING** — resource telah dialokasikan, instance sedang disiapkan untuk boot pertama kali; belum berjalan.\n- **RUNNING** — instance sedang boot atau sudah berjalan normal.\n- **PENDING_STOP** — graceful shutdown sedang berlangsung (bila fitur ini diaktifkan).\n- **STOPPING** — guest OS sedang dimatikan.\n- **TERMINATED** — instance berhenti; dapat di-restart atau dihapus.\n- **REPAIRING** — Compute Engine menjalankan operasi perbaikan akibat internal error atau maintenance host; instance tidak dapat digunakan selama proses ini.\n- **SUSPENDING** / **SUSPENDED** — instance dibekukan dengan memori dipertahankan; maksimum 60 hari sebelum otomatis menjadi TERMINATED.\n- **PENDING** — khusus Flex-start VM (durasi tunggu ≥90 detik) atau TPU standalone; **bukan** status umum semua VM — _catatan: ini adalah detail khusus, jangan digeneralisasi._\n\n**Hubungan dengan komponen lain:** Biaya CPU/memori dikenakan selama RUNNING dan PENDING_STOP; resource eksternal seperti disk dan IP tetap dikenai biaya selama resource tersebut ada, terlepas dari status VM (GCE-005).\n\n**Mengapa penting saat troubleshooting?** Status instance adalah titik awal diagnosis hampir semua masalah akses (SSH/RDP gagal, VM tidak responsif). Status TERMINATED yang tidak bisa kembali RUNNING sering menandakan keterbatasan resource (lihat quota dan resource availability)."
+}

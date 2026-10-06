@@ -1,0 +1,19 @@
+{
+  "document_id": "basics-05-boot-disk-image-dan-startup",
+  "title": "Boot Disk, Image, dan Startup",
+  "category": "vm_lifecycle",
+  "source_ids": [
+    "GCE-032",
+    "GCE-002",
+    "GCE-024",
+    "GCE-027"
+  ],
+  "url": "https://docs.cloud.google.com/compute/docs/images",
+  "source_urls": {
+    "GCE-032": "https://docs.cloud.google.com/compute/docs/images",
+    "GCE-002": "https://docs.cloud.google.com/compute/docs/troubleshooting/known-issues",
+    "GCE-024": "https://docs.cloud.google.com/compute/docs/troubleshooting/troubleshooting-disk-full-resize",
+    "GCE-027": "https://docs.cloud.google.com/compute/docs/troubleshooting/vm-startup"
+  },
+  "text": "**Definisi image:** Template sistem operasi yang digunakan Compute Engine untuk membuat boot disk VM (GCE-032). Terdapat dua jenis: **public image** (disediakan Google/komunitas open source/vendor pihak ketiga, tersedia untuk semua project) dan **custom image** (milik satu project, dibuat dari boot disk/image yang sudah ada) (GCE-032).\n\n**Hubungan image–boot disk:** Saat instance dibuat, image yang dipilih digunakan untuk membuat persistent boot disk; ukuran boot disk default mengikuti ukuran image namun dapat diperbesar (resize) (GCE-032).\n\n**Startup script:** Berkas yang dijalankan sebagai root saat proses boot VM untuk menjalankan tugas inisialisasi (instalasi paket, menjalankan service, konfigurasi). Script disalin ke VM, diberi hak eksekusi, lalu dijalankan otomatis saat boot (GCE-002, sumber startup-scripts). Error fatal dalam startup script dapat menyebabkan boot tidak selesai sempurna, service yang seharusnya berjalan tidak aktif, atau VM tampak tidak responsif.\n\n**Mengapa penting saat troubleshooting?** Masalah \"boot disk penuh\" (GCE-024, GCE-027) dan \"VM gagal start\" (GCE-027) sering berakar dari kombinasi image yang tidak kompatibel dengan machine type baru (lihat known issue migrasi machine type generasi — GCE-002), filesystem korup, atau startup script yang gagal."
+}

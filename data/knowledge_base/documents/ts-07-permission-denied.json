@@ -1,0 +1,25 @@
+{
+  "document_id": "ts-07-permission-denied",
+  "title": "Permission Denied",
+  "category": "iam_permission",
+  "source_ids": [
+    "GCE-015",
+    "GCE-025",
+    "GCE-018",
+    "GCE-020",
+    "GCE-014",
+    "GCE-021",
+    "GCE-016"
+  ],
+  "url": "https://docs.cloud.google.com/iam/docs/overview",
+  "source_urls": {
+    "GCE-015": "https://docs.cloud.google.com/iam/docs/overview",
+    "GCE-025": "https://docs.cloud.google.com/compute/docs/troubleshooting/troubleshooting-vm-creation",
+    "GCE-018": "https://docs.cloud.google.com/compute/docs/troubleshooting/troubleshooting-ssh-errors",
+    "GCE-020": "https://docs.cloud.google.com/compute/docs/oslogin",
+    "GCE-014": "https://docs.cloud.google.com/compute/docs/access/service-accounts",
+    "GCE-021": "https://docs.cloud.google.com/iap/docs/using-tcp-forwarding",
+    "GCE-016": "https://docs.cloud.google.com/iam/docs/understanding-roles"
+  },
+  "text": "**Gejala/contoh error:** `Required 'compute.regions.get' permission for 'projects/PROJECT_ID/regions/REGION'`; error IAM saat SSH (OS Login); error saat memanggil Google Cloud API dari dalam VM.\n\n**Pertanyaan klarifikasi:** Principal mana yang mengalami ini (user, service account)? Tindakan apa yang gagal? Pesan error lengkap (biasanya menyebut permission yang kurang)? Apakah ini akses manusia ke Console/gcloud, atau akses VM ke API lain?\n\n**Kemungkinan penyebab:**\n- Principal belum memiliki IAM role yang mencakup permission yang dibutuhkan (GCE-015, GCE-025).\n- Untuk akses SSH: role OS Login (`roles/compute.osLogin`/`osAdminLogin`) belum diberikan (GCE-018, GCE-020).\n- Untuk akses API dari dalam VM: service account punya IAM role memadai tetapi access scope instance membatasinya (atau sebaliknya) — basics 3.10 (GCE-014).\n- Untuk IAP tunnel: `roles/iap.tunnelResourceAccessor` belum diberikan (GCE-021).\n\n**Pemeriksaan aman:**\n1. Identifikasi principal dan permission persis dari pesan error (read-only).\n2. Periksa role yang sudah di-bind ke principal tersebut pada resource terkait (read-only) — GCE-015.\n3. Untuk akses dari VM: periksa service account yang dipasang dan access scope-nya (read-only) — GCE-014.\n\n**Langkah diagnosis bertahap:**\n1. Petakan permission yang kurang ke predefined role paling sempit yang mencakupnya (prinsip least privilege) — GCE-016.\n2. Jika kasus akses VM ke API: pastikan **baik** IAM role **maupun** access scope mengizinkan; salah satu saja tidak cukup (GCE-014).\n3. Berikan role pada level resource sesempit mungkin (instance/project), bukan di level organisasi, kecuali memang dibutuhkan.\n\n**Solusi/workaround:** Grant role predefined yang sesuai kebutuhan spesifik (mis. `roles/compute.osLogin` untuk SSH non-admin, `roles/compute.viewer` untuk akses baca). Hindari basic role (`Owner`/`Editor`) sebagai solusi cepat.\n\n**Risiko/catatan:** **Jangan** menyarankan pemberian role `Owner` sebagai solusi umum untuk error permission apa pun — ini melanggar prinsip least privilege dan berisiko keamanan besar. Perubahan IAM policy memengaruhi akses principal ke resource secara luas; informasikan cakupan sebelum diterapkan.\n\n**Verifikasi:** Tindakan yang semula gagal kini berhasil dengan role yang diberikan, dan tidak ada permission berlebih yang ditambahkan dari yang dibutuhkan.\n\n**Eskalasi/alternatif:** Jika pengguna tidak memiliki akses untuk mengubah IAM policy sama sekali, arahkan ke administrator project/organisasi.\n\n**Sumber:** GCE-014, GCE-015, GCE-016, GCE-018, GCE-020, GCE-021, GCE-025."
+}

@@ -1,0 +1,19 @@
+{
+  "document_id": "ts-04-rdp-gagal",
+  "title": "RDP Gagal",
+  "category": "ssh_rdp",
+  "source_ids": [
+    "GCE-002",
+    "GCE-003",
+    "GCE-019",
+    "GCE-021"
+  ],
+  "url": "https://docs.cloud.google.com/compute/docs/troubleshooting/known-issues",
+  "source_urls": {
+    "GCE-002": "https://docs.cloud.google.com/compute/docs/troubleshooting/known-issues",
+    "GCE-003": "https://docs.cloud.google.com/compute/docs/troubleshooting/troubleshooting-windows",
+    "GCE-019": "https://docs.cloud.google.com/compute/docs/troubleshooting/troubleshooting-rdp",
+    "GCE-021": "https://docs.cloud.google.com/iap/docs/using-tcp-forwarding"
+  },
+  "text": "**Gejala/contoh error:** Tidak dapat connect via RDP; layar hitam/connection timeout; error lisensi RDS.\n\n**Pertanyaan klarifikasi:** Windows Server versi berapa (Core atau Desktop Experience)? Apakah instance baru dibuat (masih dalam proses sysprep)? Apakah menggunakan RDS dengan banyak pengguna bersamaan? Password di-generate via Console atau diatur manual? Apakah ada external IP?\n\n**Kemungkinan penyebab:**\n- Boot/sysprep belum selesai — instance baru butuh sekitar 5–10 menit sebelum siap (GCE-002, GCE-003).\n- Firewall tidak mengizinkan TCP port 3389 (GCE-019).\n- Metadata server (`169.254.169.254`) tidak terjangkau dari dalam guest (GCE-019).\n- Kredensial lokal salah/belum diset; password harus di-reset via Console/SAC, bukan ditebak (GCE-019).\n- Menggunakan Windows Server Core padahal mengharapkan antarmuka Desktop Experience (GCE-019).\n- RDS Client Access License (CAL) habis — gejala muncul setelah sejumlah sesi bersamaan tercapai (GCE-019).\n- Known issue versi/machine-type tertentu, misalnya batas vCPU Windows Server 2012/2016 pada C4/C4D/C3D, atau isu suspend/resume pada Windows Server 2025/11 24h2/25h2 (GCE-002) — berlaku kondisional, periksa versi OS dan machine type pengguna sebelum menyimpulkan.\n\n**Pemeriksaan aman:**\n1. Periksa Serial Port 1 untuk konfirmasi \"GCEGuestAgent\" sudah berjalan (read-only) — GCE-019.\n2. Lihat VM screenshot untuk menilai tahap boot (read-only) — GCE-019.\n3. Verifikasi firewall rule mengizinkan `tcp:3389` (read-only) — GCE-019.\n4. Jalankan Connectivity Test di Console, atau dari workstation: `curl -v telnet://DESTINATION_IP_ADDRESS:3389` (read-only, tidak mengubah resource) — GCE-019.\n\n**Langkah diagnosis bertahap:**\n1. Jika boot belum selesai (screenshot menunjukkan sysprep) → tunggu, jangan restart paksa.\n2. Jika firewall tidak mengizinkan 3389 → tambahkan rule dengan source range yang sesuai konteks keamanan pengguna (minta konfirmasi).\n3. Jika kredensial bermasalah → reset password Windows via Console atau Special Administration Console (SAC) (GCE-019).\n4. Jika RDS CAL habis → gunakan flag override `/admin` untuk administratif, pertimbangkan uninstall RDS bila memang bukan kebutuhan utama (tindakan ini mengubah peran server, perlu konfirmasi) — GCE-019.\n5. Jalankan skrip diagnosis bawaan `rdp_status.ps1` dari dalam VM (via SAC/serial console) bila tersedia — GCE-019.\n\n**Solusi/workaround:** Lihat langkah di atas sesuai akar penyebab; untuk known issue versi tertentu, rujuk workaround spesifik di GCE-002 (misalnya memilih machine type dengan vCPU lebih kecil, atau OS versi lain).\n\n**Risiko/catatan:** Hindari restart paksa saat Windows Update sedang berjalan (disebutkan dalam GCE-003 sebagai praktik yang harus dihindari). Reset password dan perubahan firewall berdampak pada akses — informasikan ke pengguna.\n\n**Verifikasi:** Koneksi RDP berhasil dan sesi desktop dapat digunakan secara stabil.\n\n**Eskalasi/alternatif:** Untuk BSOD berulang atau VM yang stuck di boot meski sudah diagnosis lanjutan (lihat GCE-003 — gunakan recovery VM terpisah untuk `chkdsk`/`sfc`/`dism`), atau jika tidak cocok pola di atas, eskalasi ke Google Cloud Support.\n\n**Sumber:** GCE-003, GCE-019, GCE-002, GCE-021."
+}

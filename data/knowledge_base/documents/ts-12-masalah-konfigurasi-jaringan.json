@@ -1,0 +1,21 @@
+{
+  "document_id": "ts-12-masalah-konfigurasi-jaringan",
+  "title": "Masalah Konfigurasi Jaringan",
+  "category": "networking",
+  "source_ids": [
+    "GCE-028",
+    "GCE-031",
+    "GCE-010",
+    "GCE-011",
+    "GCE-012"
+  ],
+  "url": "https://docs.cloud.google.com/compute/docs/troubleshooting/troubleshooting-networking",
+  "source_urls": {
+    "GCE-028": "https://docs.cloud.google.com/compute/docs/troubleshooting/troubleshooting-networking",
+    "GCE-031": "https://docs.cloud.google.com/compute/docs/networking/network-overview",
+    "GCE-010": "https://docs.cloud.google.com/vpc/docs/overview",
+    "GCE-011": "https://docs.cloud.google.com/firewall/docs/firewalls",
+    "GCE-012": "https://docs.cloud.google.com/vpc/docs/routes"
+  },
+  "text": "**Gejala/contoh error:** Konektivitas antar-VM dalam VPC gagal; protocol forwarding error (\"hanya satu rule per target\"); DNS resolusi tidak sesuai harapan; performa jaringan menurun drastis pada beban tinggi.\n\n**Pertanyaan klarifikasi:** Apakah masalah antar-instance dalam VPC yang sama, lintas VPC (peering/Shared VPC), atau ke luar VPC? Apakah menggunakan multi-NIC? Apakah ada perubahan topologi jaringan/DNS baru-baru ini (termasuk migrasi ke zonal DNS)?\n\n**Kemungkinan penyebab:**\n- Firewall default-deny memblokir traffic yang seharusnya diizinkan, termasuk traffic internal (GCE-028).\n- Multiple forwarding rule pada target instance yang sama — sistem hanya mengizinkan satu rule per target (GCE-028).\n- Proyek bermigrasi ke zonal DNS namun masih menampilkan setting DNS global akibat organization policy belum diterapkan dengan benar, atau metadata VM berisi nilai yang konflik (GCE-028).\n- RX/TX queue NIC tidak mencukupi untuk traffic rate tinggi, menyebabkan dropped packet (GCE-028).\n- Konfigurasi route/subnet salah untuk NIC tertentu pada VM multi-NIC (basics 3.7, GCE-031).\n\n**Pemeriksaan aman (read-only):**\n1. Tampilkan firewall rule dan route yang berlaku untuk tiap network interface via Console (GCE-028).\n2. Periksa konfigurasi DNS project/VM (global vs zonal) (GCE-028).\n3. Periksa jumlah dan konfigurasi NIC pada VM terkait (GCE-031).\n\n**Langkah diagnosis bertahap:**\n1. Pastikan firewall rule internal (`default-allow-internal` atau setara pada VPC custom) benar-benar ada dan tidak sengaja terhapus.\n2. Jika protocol forwarding error → periksa apakah sudah ada rule lain pada target yang sama; hapus/gabungkan sesuai kebutuhan (perubahan ini berdampak pada traffic yang sudah berjalan, perlu konfirmasi).\n3. Jika DNS tidak sesuai harapan → verifikasi organization policy zonal DNS dan metadata VM terkait.\n4. Jika packet loss pada traffic tinggi → evaluasi kebutuhan RX/TX queue tambahan sesuai dokumentasi.\n\n**Solusi/workaround:** Perbaiki firewall rule internal, konsolidasikan forwarding rule, selaraskan kebijakan DNS, sesuaikan queue NIC atau gunakan driver jaringan yang direkomendasikan (gVNIC) untuk performa lebih baik.\n\n**Risiko/catatan:** Perubahan pada firewall internal, route, atau DNS project dapat berdampak luas ke seluruh resource dalam VPC — bukan hanya satu VM. Selalu konfirmasi cakupan dampak sebelum menerapkan perubahan.\n\n**Verifikasi:** Konektivitas antar-resource yang terdampak kembali normal dan stabil pada pengujian berulang.\n\n**Eskalasi/alternatif:** Untuk topologi jaringan kompleks (Shared VPC lintas organisasi, hybrid connectivity), eskalasi ke tim arsitektur jaringan internal atau Google Cloud Support.\n\n**Sumber:** GCE-010, GCE-011, GCE-012, GCE-028, GCE-031."
+}

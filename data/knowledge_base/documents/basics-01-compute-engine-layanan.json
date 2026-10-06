@@ -1,0 +1,13 @@
+{
+  "document_id": "basics-01-compute-engine-layanan",
+  "title": "Compute Engine (layanan)",
+  "category": "general_troubleshooting",
+  "source_ids": [
+    "GCE-004"
+  ],
+  "url": "https://docs.cloud.google.com/compute/docs",
+  "source_urls": {
+    "GCE-004": "https://docs.cloud.google.com/compute/docs"
+  },
+  "text": "**Definisi:** Layanan virtualisasi IaaS Google Cloud untuk menjalankan VM dengan konfigurasi vCPU, memori, disk, dan jaringan yang dapat disesuaikan (GCE-004).\n\n**Fungsi:** Menyediakan unit komputasi dasar untuk beban kerja yang membutuhkan kontrol penuh atas sistem operasi, dibandingkan layanan serverless/managed lainnya.\n\n**Hubungan dengan komponen lain:** Setiap VM instance bergantung pada machine type, image/boot disk, network interface, dan (opsional) service account.\n\n**Mengapa penting saat troubleshooting?** Memahami bahwa Compute Engine adalah IaaS membantu menentukan batas tanggung jawab: masalah di dalam guest OS (misalnya proses crash, aplikasi hang) umumnya berada di luar kendali layer infrastruktur Google Cloud, sedangkan masalah alokasi resource, jaringan VPC, dan IAM berada di layer platform."
+}

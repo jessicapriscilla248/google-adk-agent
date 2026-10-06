@@ -1,0 +1,15 @@
+{
+  "document_id": "basics-07-network-interface-nic",
+  "title": "Network Interface (NIC)",
+  "category": "networking",
+  "source_ids": [
+    "GCE-031",
+    "GCE-028"
+  ],
+  "url": "https://docs.cloud.google.com/compute/docs/networking/network-overview",
+  "source_urls": {
+    "GCE-031": "https://docs.cloud.google.com/compute/docs/networking/network-overview",
+    "GCE-028": "https://docs.cloud.google.com/compute/docs/troubleshooting/troubleshooting-networking"
+  },
+  "text": "**Definisi:** Setiap VM memiliki virtual network interface (vNIC) default yang terhubung ke subnet dalam VPC. VM dapat memiliki satu atau lebih NIC, namun jumlah NIC tambahan hanya dapat dikonfigurasi **saat instance dibuat**, bukan setelahnya; bare metal instance tidak mendukung multi-NIC sama sekali (GCE-031).\n\n**Kapan multi-NIC digunakan:** Ketika aplikasi memerlukan pemisahan traffic, misalnya memisahkan data plane dari management plane (GCE-031). Dynamic Network Interfaces memungkinkan penambahan/pengurangan subinterface berbasis VLAN tanpa restart instance (GCE-031).\n\n**Mengapa penting saat troubleshooting?** Masalah konektivitas jaringan perlu memeriksa NIC mana yang digunakan, subnet/VPC yang terhubung, serta firewall rule dan route yang berlaku untuk NIC tersebut (GCE-028)."
+}

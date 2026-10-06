@@ -1,0 +1,19 @@
+{
+  "document_id": "basics-06-persistent-disk-vs-local-ssd",
+  "title": "Persistent Disk vs Local SSD",
+  "category": "disk_storage",
+  "source_ids": [
+    "GCE-008",
+    "GCE-023",
+    "GCE-009",
+    "GCE-024"
+  ],
+  "url": "https://docs.cloud.google.com/compute/docs/disks",
+  "source_urls": {
+    "GCE-008": "https://docs.cloud.google.com/compute/docs/disks",
+    "GCE-023": "https://docs.cloud.google.com/compute/docs/disks/performance",
+    "GCE-009": "https://docs.cloud.google.com/compute/docs/disks/local-ssd",
+    "GCE-024": "https://docs.cloud.google.com/compute/docs/troubleshooting/troubleshooting-disk-full-resize"
+  },
+  "text": "**Persistent Disk (PD):** Layanan penyimpanan blok yang independen dari instance yang terpasang — data tetap ada meski instance dihapus, dapat dilepas-pasang ke instance lain, dan dapat di-resize tanpa menghentikan instance atau kehilangan data (GCE-008). Performa PD mengikuti rumus `Actual Performance = MIN(disk performance limit, machine type limit)` — performa ditentukan oleh nilai terendah antara batas disk dan batas machine type (GCE-023).\n\n**Local SSD:** Penyimpanan sementara (ephemeral) berbasis solid-state yang terpasang langsung ke server fisik; performa IOPS/latensi jauh lebih tinggi daripada Persistent Disk, namun **data dapat hilang** jika instance stop atau terminate, tidak dapat ditambahkan setelah instance dibuat, dan tidak bisa di-backup lewat snapshot/machine image (GCE-009).\n\n| Aspek | Persistent Disk | Local SSD |\n|---|---|---|\n| Durabilitas | Tahan lama, dapat direplikasi lintas zone | Hilang saat stop/terminate |\n| Performa | Lebih rendah, skala dengan ukuran & machine type | Sangat tinggi, latensi rendah |\n| Penggunaan khas | Boot disk, data persisten | Cache, scratch space, tempdb |\n| Dapat ditambah setelah create | Ya | Tidak |\n\n**Mengapa penting saat troubleshooting?** Kesalahan menyamakan kedua jenis disk ini bisa fatal — misalnya mengandalkan Local SSD untuk data yang harus permanen. Untuk topik \"disk penuh\", penting membedakan **kapasitas disk yang di-provision** (ukuran GB pada Compute Engine) dengan **ruang kosong filesystem di guest OS** — keduanya adalah hal berbeda (GCE-024); disk bisa berukuran besar tetapi filesystem di dalamnya belum di-extend untuk memakai seluruh kapasitas."
+}

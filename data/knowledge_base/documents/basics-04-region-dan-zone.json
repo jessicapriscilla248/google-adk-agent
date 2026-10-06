@@ -1,0 +1,13 @@
+{
+  "document_id": "basics-04-region-dan-zone",
+  "title": "Region dan Zone",
+  "category": "instance_configuration",
+  "source_ids": [
+    "GCE-007"
+  ],
+  "url": "https://docs.cloud.google.com/compute/docs/regions-zones",
+  "source_urls": {
+    "GCE-007": "https://docs.cloud.google.com/compute/docs/regions-zones"
+  },
+  "text": "**Definisi:** Region adalah area geografis independen yang terdiri atas beberapa zone; zone diberi nama dua bagian, misalnya `us-central1-a` (region `us-central1`, zone `a`) (GCE-007).\n\n**Jenis resource berdasarkan cakupan** (GCE-007):\n- **Zonal** — terikat satu zone (instance, zonal persistent disk); resource lain yang berinteraksi harus berada di zone yang sama.\n- **Regional** — dapat diakses seluruh zone dalam satu region (static IP, regional disk).\n- **Global** — dapat digunakan lintas lokasi (image, firewall rule).\n\n**Pertimbangan pemilihan** (GCE-007): toleransi kegagalan (distribusi lintas zone/region), latensi jaringan (dekat dengan pengguna), dan kebutuhan akselerasi AI/ML (AI zone dengan GPU/TPU kapasitas tinggi).\n\n**Mengapa penting saat troubleshooting?** Kesalahan paling umum adalah mencoba menghubungkan resource zonal lintas zone (misalnya attach disk dari zone berbeda), atau salah mengira resource availability (kapasitas fisik zone) sebagai masalah quota (lihat 3.12)."
+}

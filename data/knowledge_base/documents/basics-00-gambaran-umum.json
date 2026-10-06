@@ -1,0 +1,13 @@
+{
+  "document_id": "basics-00-gambaran-umum",
+  "title": "Gambaran Umum Compute Engine",
+  "category": "instance_configuration",
+  "source_ids": [
+    "GCE-004"
+  ],
+  "url": "https://docs.cloud.google.com/compute/docs",
+  "source_urls": {
+    "GCE-004": "https://docs.cloud.google.com/compute/docs"
+  },
+  "text": "Compute Engine adalah layanan komputasi dan hosting Google Cloud yang memungkinkan pengguna membuat dan menjalankan virtual machine (VM) di atas infrastruktur Google (GCE-004). Layanan ini mencakup pilihan machine type yang luas, beberapa jenis penyimpanan persisten, dan integrasi jaringan melalui Virtual Private Cloud (VPC). Use case umum meliputi migrasi beban kerja dari on-premises, hosting aplikasi web yang dapat diskalakan, cluster komputasi besar, dan hosting database (GCE-004).\n\nPerlu dicatat: Compute Engine menyediakan infrastruktur-as-a-service (IaaS) — pengguna bertanggung jawab mengelola sistem operasi guest, aplikasi, dan konfigurasi di dalam VM, sementara Google mengelola infrastruktur fisik, hypervisor, dan jaringan dasar."
+}

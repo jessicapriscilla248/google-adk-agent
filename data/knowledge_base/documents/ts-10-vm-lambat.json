@@ -1,0 +1,19 @@
+{
+  "document_id": "ts-10-vm-lambat",
+  "title": "VM Lambat",
+  "category": "performance",
+  "source_ids": [
+    "GCE-002",
+    "GCE-030",
+    "GCE-023",
+    "GCE-028"
+  ],
+  "url": "https://docs.cloud.google.com/compute/docs/troubleshooting/known-issues",
+  "source_urls": {
+    "GCE-002": "https://docs.cloud.google.com/compute/docs/troubleshooting/known-issues",
+    "GCE-030": "https://docs.cloud.google.com/compute/docs/instances/observe-monitor-vms",
+    "GCE-023": "https://docs.cloud.google.com/compute/docs/disks/performance",
+    "GCE-028": "https://docs.cloud.google.com/compute/docs/troubleshooting/troubleshooting-networking"
+  },
+  "text": "**Gejala/contoh error:** Aplikasi merespons lambat; CPU utilization tinggi terus-menerus; I/O disk lambat; throughput jaringan rendah.\n\n**Pertanyaan klarifikasi:** Lambat di sisi apa (CPU, memory, disk I/O, network)? Sejak kapan, dan apakah ada perubahan beban kerja/trafik terbaru? Machine type dan jenis disk yang dipakai? Apakah sudah memasang Ops Agent untuk metrik guest-level?\n\n**Kemungkinan penyebab (harus diperiksa lewat metrik, bukan ditebak dari satu indikator):**\n- CPU bottleneck — termasuk kemungkinan metrik CPU utilization yang hanya terskala sampai 50% pada instance dengan satu thread per core (perlu normalisasi di Metrics Explorer) (GCE-002).\n- Memory bottleneck — metrik ini **tidak tersedia tanpa Ops Agent** terpasang (GCE-030).\n- Disk I/O terbatas oleh performa disk (ukuran) **atau** oleh machine type, karena performa aktual = `MIN(disk limit, machine type limit)` (GCE-023).\n- Network throughput terbatas oleh single TCP flow pada instance tertentu, misalnya C3D >30 vCPU yang terbatas 20–25 Gbps untuk satu flow (known issue, kondisional) (GCE-002).\n- RX/TX queue NIC tidak memadai untuk traffic rate tinggi menyebabkan packet loss/latency (GCE-028).\n\n**Pemeriksaan aman (read-only):**\n1. Buka tab **Observability** pada instance di Console untuk metrik CPU, network, disk I/O bawaan (tanpa agent) (GCE-030).\n2. Jika butuh metrik memory/proses, periksa apakah Ops Agent sudah terpasang; bila belum, ini sendiri adalah temuan (keterbatasan visibilitas), bukan penyebab lambat (GCE-030).\n3. Bandingkan beban I/O aktual terhadap batas performa disk dan machine type (GCE-023).\n\n**Langkah diagnosis bertahap:**\n1. Periksa CPU utilization — bila tinggi terus-menerus, evaluasi apakah machine type/vCPU cukup untuk beban kerja (basics 3.3), ingat kemungkinan isu skala metrik 50% pada single-thread-per-core (GCE-002).\n2. Periksa disk I/O — bandingkan dengan batas teoretis `MIN(disk, machine type)`; jika disk sudah di batas, pertimbangkan ukuran disk lebih besar atau jenis disk performa lebih tinggi (GCE-023).\n3. Periksa network — bila single flow mentok, uji dengan multiple TCP flow (GCE-002).\n4. Jika metrik memory dibutuhkan dan belum ada Ops Agent, pasang Ops Agent dahulu sebelum menyimpulkan ada/tidaknya bottleneck memory (GCE-030).\n\n**Solusi/workaround:** Upgrade machine type/vCPU, upgrade/resize disk untuk performa lebih tinggi, gunakan multiple TCP flow untuk throughput jaringan, pasang Ops Agent untuk visibilitas penuh.\n\n**Risiko/catatan:** Jangan menyimpulkan penyebab dari satu metrik saja (prinsip wajib sesuai `gcp-troubleshooting-analyst`). Resize machine type/disk dapat memerlukan restart/downtime — perlu konfirmasi pengguna.\n\n**Verifikasi:** Metrik yang relevan (CPU/memory/disk I/O/network) kembali ke level normal dan performa aplikasi membaik secara terukur, bukan sekadar perasaan subjektif.\n\n**Eskalasi/alternatif:** Jika semua resource (CPU/memory/disk/network) tampak dalam batas wajar namun aplikasi tetap lambat, kemungkinan masalah ada di level aplikasi/database, di luar cakupan infrastruktur Compute Engine — arahkan ke tim aplikasi terkait.\n\n**Sumber:** GCE-002, GCE-023, GCE-028, GCE-030."
+}

@@ -1,0 +1,17 @@
+{
+  "document_id": "ts-13-catatan-umum-lintas-topik",
+  "title": "Catatan Umum Lintas Topik Troubleshooting",
+  "category": "general_troubleshooting",
+  "source_ids": [
+    "GCE-002",
+    "GCE-003",
+    "GCE-016"
+  ],
+  "url": "https://docs.cloud.google.com/compute/docs/troubleshooting/known-issues",
+  "source_urls": {
+    "GCE-002": "https://docs.cloud.google.com/compute/docs/troubleshooting/known-issues",
+    "GCE-003": "https://docs.cloud.google.com/compute/docs/troubleshooting/troubleshooting-windows",
+    "GCE-016": "https://docs.cloud.google.com/iam/docs/understanding-roles"
+  },
+  "text": "- Seluruh known issue yang dikutip dari GCE-002 bersifat **kondisional** (terikat versi image/guest agent/machine family/OS tertentu) dan **dinamis** (daftar berubah seiring waktu) — selalu verifikasi ulang kondisi spesifik pengguna sebelum menyimpulkan penyebab, dan jangan menganggap known issue yang tercatat sebagai halaman masih online berarti bug tersebut masih terjadi pada versi software pengguna saat ini.\n- Topik yang memerlukan riset lanjutan sebelum dianggap benar-benar lengkap: detail BSOD/offline repair Windows (GCE-003 ditandai \"truncated\" oleh tool fetch) dan daftar permission persis per IAM role Compute Engine (GCE-016). Status: **Belum lengkap — perlu riset lanjutan** (lihat `research_notes.md`)."
+}

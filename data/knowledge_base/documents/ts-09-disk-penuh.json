@@ -1,0 +1,19 @@
+{
+  "document_id": "ts-09-disk-penuh",
+  "title": "Disk Penuh",
+  "category": "disk_storage",
+  "source_ids": [
+    "GCE-024",
+    "GCE-027",
+    "GCE-008",
+    "GCE-009"
+  ],
+  "url": "https://docs.cloud.google.com/compute/docs/troubleshooting/troubleshooting-disk-full-resize",
+  "source_urls": {
+    "GCE-024": "https://docs.cloud.google.com/compute/docs/troubleshooting/troubleshooting-disk-full-resize",
+    "GCE-027": "https://docs.cloud.google.com/compute/docs/troubleshooting/vm-startup",
+    "GCE-008": "https://docs.cloud.google.com/compute/docs/disks",
+    "GCE-009": "https://docs.cloud.google.com/compute/docs/disks/local-ssd"
+  },
+  "text": "**Gejala/contoh error:** `No space left on device`; SSH/RDP gagal connect padahal sebelumnya normal; VM tidak bisa start karena boot disk penuh dan OS tidak mendukung auto-resize (GCE-024, GCE-027).\n\n**Pertanyaan klarifikasi:** Linux atau Windows? Disk mana yang penuh (boot disk atau data disk)? Apakah ini menghambat VM start, atau VM masih bisa diakses tapi aplikasi error? Kapan mulai terjadi, adakah proses yang baru menulis data besar?\n\n**Kemungkinan penyebab:**\n- Ruang filesystem guest OS habis meski kapasitas disk (provisioned size) di Compute Engine sebenarnya cukup besar — filesystem belum di-extend untuk memakai penuh kapasitas disk (basics 3.6, GCE-024).\n- Kapasitas disk yang di-provision memang sudah habis (perlu resize sungguhan).\n- Log/cache/file sementara menumpuk tanpa rotasi.\n\n**Pemeriksaan aman (read-only):**\n1. Linux: periksa serial console output untuk konfirmasi kondisi disk penuh via `gcloud compute instances tail-serial-port-output VM_NAME`, atau bila masih bisa SSH jalankan `df -h` (GCE-024).\n2. Windows: gunakan Special Administration Console (SAC) dan jalankan `wmic logicaldisk get caption,freespace,size` (GCE-024).\n\n**Langkah diagnosis bertahap:**\n1. Pastikan dulu ini benar kapasitas disk, bukan sekadar filesystem yang belum di-extend setelah resize sebelumnya.\n2. **Sebelum tindakan apa pun yang mengubah disk**, buat snapshot terlebih dahulu untuk melindungi data — ini langkah wajib menurut dokumentasi resmi sebelum troubleshooting lanjutan (GCE-024).\n3. Hapus file yang tidak diperlukan jika memungkinkan untuk mendapat ruang segera (GCE-024).\n4. Jika memang perlu kapasitas lebih besar: resize disk melalui Console/gcloud, lalu extend filesystem secara manual bila image tidak mendukung auto-expand (GCE-024).\n\n**Solusi/workaround:** Resize disk + extend filesystem; untuk VM yang sudah tidak bisa diakses karena boot disk penuh, lepas disk dan pasang sebagai secondary disk ke instance debug lain untuk dibersihkan/di-resize, lalu pasang kembali (GCE-024, GCE-027).\n\n**Risiko/catatan:** Resize memiliki batas frekuensi untuk jenis disk tertentu — Extreme Persistent Disk maksimal sekali per 6 jam, Hyperdisk Extreme sekali per 4 jam (GCE-024); ini tidak berlaku generik untuk semua jenis PD. Untuk konfigurasi Storage Spaces Direct (S2D), resize disk dasar tidak otomatis menambah kapasitas yang dikenali — perlu menambah drive baru (GCE-024). Operasi detach/attach disk berisiko downtime — perlu konfirmasi pengguna.\n\n**Verifikasi:** `df -h` (Linux) atau `wmic logicaldisk` (Windows) menunjukkan ruang kosong memadai, dan VM/aplikasi kembali berfungsi normal.\n\n**Eskalasi/alternatif:** Jika akses VM tetap tidak bisa dipulihkan setelah resize, pertimbangkan membuat disk baru dari snapshot atau gunakan tool pemulihan resmi (GCE Rescue) (GCE-024).\n\n**Sumber:** GCE-024, GCE-027, GCE-008, GCE-009."
+}

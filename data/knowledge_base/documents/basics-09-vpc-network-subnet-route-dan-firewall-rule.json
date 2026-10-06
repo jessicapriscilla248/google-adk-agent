@@ -1,0 +1,19 @@
+{
+  "document_id": "basics-09-vpc-network-subnet-route-dan-firewall-rule",
+  "title": "VPC Network, Subnet, Route, dan Firewall Rule",
+  "category": "networking",
+  "source_ids": [
+    "GCE-010",
+    "GCE-012",
+    "GCE-011",
+    "GCE-028"
+  ],
+  "url": "https://docs.cloud.google.com/vpc/docs/overview",
+  "source_urls": {
+    "GCE-010": "https://docs.cloud.google.com/vpc/docs/overview",
+    "GCE-012": "https://docs.cloud.google.com/vpc/docs/routes",
+    "GCE-011": "https://docs.cloud.google.com/firewall/docs/firewalls",
+    "GCE-028": "https://docs.cloud.google.com/compute/docs/troubleshooting/troubleshooting-networking"
+  },
+  "text": "**VPC network:** Resource **global** yang terdiri dari kumpulan subnet **regional** di seluruh dunia, terhubung melalui jaringan global Google; terisolasi logis dari VPC lain (GCE-010). VPC dapat dibagikan lintas project melalui Shared VPC, atau dihubungkan antar-VPC melalui VPC Network Peering (GCE-010).\n\n**Subnet:** Bersifat regional; menyediakan rentang IP untuk resource (VM, GKE cluster) di region tersebut (GCE-010).\n\n**Route:** Mendefinisikan jalur traffic dari VM ke destinasi, berupa pasangan destination prefix (CIDR) dan next hop (GCE-012). Google Cloud otomatis menambahkan default route `0.0.0.0/0` (dan `::/0` untuk IPv6) dengan next hop `default-internet-gateway`, diperlukan agar VM dengan external IP, Cloud NAT, dan beberapa Google API dapat dijangkau (GCE-012). Urutan evaluasi routing: special routing paths → policy-based routes → subnet routes → custom routes (static/dynamic); jika tidak ada route yang cocok, paket di-drop (GCE-012).\n\n**Firewall rule:** Mengontrol traffic **ingress** (masuk) dan **egress** (keluar) secara terpisah (satu rule hanya untuk satu arah). Parameter utama: **priority** (0–65535, default 1000; makin kecil makin diprioritaskan), **target** (semua instance / network tag / service account), **source** (ingress) atau **destination** (egress, default `0.0.0.0/0`), dan **action** (allow/deny) (GCE-011). VPC **default (auto mode)** memiliki 4 rule bawaan: `default-allow-internal`, `default-allow-ssh` (TCP 22 dari mana saja), `default-allow-rdp` (TCP 3389 dari mana saja), `default-allow-icmp` — seluruhnya dapat dihapus/diubah, sehingga **tidak boleh diasumsikan selalu ada** pada project/VPC tertentu (GCE-011). Compute Engine secara default hanya mengizinkan traffic yang secara eksplisit diizinkan firewall rule project (GCE-028).\n\n**Mengapa penting saat troubleshooting?** VPC/subnet/route/firewall adalah lapisan pertama yang diperiksa untuk hampir semua gejala konektivitas: SSH/RDP gagal, tidak ada akses internet, dan \"firewall memblokir koneksi\" — lihat matriks di `troubleshooting_topics.md`."
+}

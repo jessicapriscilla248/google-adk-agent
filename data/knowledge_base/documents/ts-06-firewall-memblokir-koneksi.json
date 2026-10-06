@@ -1,0 +1,21 @@
+{
+  "document_id": "ts-06-firewall-memblokir-koneksi",
+  "title": "Firewall Memblokir Koneksi",
+  "category": "firewall",
+  "source_ids": [
+    "GCE-002",
+    "GCE-018",
+    "GCE-028",
+    "GCE-011",
+    "GCE-021"
+  ],
+  "url": "https://docs.cloud.google.com/compute/docs/troubleshooting/known-issues",
+  "source_urls": {
+    "GCE-002": "https://docs.cloud.google.com/compute/docs/troubleshooting/known-issues",
+    "GCE-018": "https://docs.cloud.google.com/compute/docs/troubleshooting/troubleshooting-ssh-errors",
+    "GCE-028": "https://docs.cloud.google.com/compute/docs/troubleshooting/troubleshooting-networking",
+    "GCE-011": "https://docs.cloud.google.com/firewall/docs/firewalls",
+    "GCE-021": "https://docs.cloud.google.com/iap/docs/using-tcp-forwarding"
+  },
+  "text": "**Gejala/contoh error:** Koneksi timeout (bukan \"connection refused\") ke port tertentu; SSH-in-Browser gagal akibat firewall rule custom (GCE-002, GCE-018).\n\n**Pertanyaan klarifikasi:** Port dan protokol apa yang gagal? Apakah ini VPC default atau custom? Apakah ada firewall rule custom yang baru ditambahkan/diubah? Traffic datang dari mana (internal/eksternal/rentang IP tertentu)?\n\n**Kemungkinan penyebab:**\n- Tidak ada rule allow untuk port/protokol yang relevan, dan kebijakan default VPC adalah deny semua traffic yang tidak diizinkan eksplisit (GCE-028).\n- Rule dengan priority lebih tinggi (angka lebih kecil) men-deny traffic yang seharusnya di-allow oleh rule lain (GCE-011).\n- Firewall rule custom mengganggu SSH-in-Browser karena tidak mengizinkan range IP yang dipakai fitur tersebut (GCE-002).\n- Salah arah rule (mengatur ingress padahal masalah di egress, atau sebaliknya) (GCE-011).\n\n**Pemeriksaan aman:**\n1. Daftar firewall rule yang berlaku untuk VPC/instance terkait beserta priority-nya (read-only) — GCE-011.\n2. Jalankan Connectivity Test untuk melihat rule mana yang memblokir (read-only) — GCE-028.\n\n**Langkah diagnosis bertahap:**\n1. Identifikasi rule dengan priority tertinggi yang cocok dengan traffic — itulah rule yang menentukan (GCE-011).\n2. Periksa apakah ingress/egress rule sesuai arah masalah.\n3. Untuk kasus SSH-in-Browser: aktifkan Identity-Aware Proxy for TCP, pastikan rule `default-allow-ssh` tidak terhapus, atau gunakan gcloud CLI sebagai alternatif (GCE-002).\n\n**Solusi/workaround:** Tambahkan/ubah rule allow dengan source/destination dan port yang spesifik sesuai kebutuhan nyata (bukan membuka seluas mungkin). Untuk akses administratif tanpa membuka port publik, gunakan IAP TCP forwarding dengan firewall rule khusus range `35.235.240.0/20` (GCE-021).\n\n**Risiko/catatan:** Mengubah firewall rule memengaruhi keamanan seluruh resource yang kena target rule tersebut — selalu konfirmasi cakupan (target instance, source range) sebelum menerapkan. **Jangan** menyarankan `0.0.0.0/0` sebagai source default untuk port administratif (SSH/RDP) sebagai solusi umum.\n\n**Verifikasi:** Traffic pada port yang dimaksud berhasil melewati firewall (uji dengan Connectivity Test atau percobaan koneksi nyata oleh pengguna).\n\n**Eskalasi/alternatif:** Jika terdapat Organization Policy atau hierarchical firewall policy di level organisasi/folder yang di luar kendali project, eskalasi ke admin organisasi/Google Cloud Support.\n\n**Sumber:** GCE-011, GCE-021, GCE-028, GCE-002."
+}

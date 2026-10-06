@@ -1,0 +1,17 @@
+{
+  "document_id": "basics-12-quota-dan-perbedaan-dengan-ketersediaan-resource-zonal",
+  "title": "Quota dan Perbedaan dengan Ketersediaan Resource Zonal",
+  "category": "quota",
+  "source_ids": [
+    "GCE-017",
+    "GCE-029",
+    "GCE-026"
+  ],
+  "url": "https://docs.cloud.google.com/compute/quotas",
+  "source_urls": {
+    "GCE-017": "https://docs.cloud.google.com/compute/quotas",
+    "GCE-029": "https://docs.cloud.google.com/compute/docs/troubleshooting/troubleshoot-operation-limits",
+    "GCE-026": "https://docs.cloud.google.com/compute/docs/troubleshooting/troubleshooting-resource-availability"
+  },
+  "text": "**Quota:** Batas maksimum jumlah resource yang boleh dibuat (GCE-017). Quota VM dan CPU umumnya bersifat **regional**; beberapa akun memiliki quota global \"CPUs (All Regions)\". Quota jaringan dan load balancing bersifat **global**. Setiap machine type memiliki pool quota CPU sendiri, kecuali kelompok tertentu yang berbagi pool (contoh: E2 dan N1 berbagi pool CPU) (GCE-017). Selain quota resource, ada pula **concurrent operation quota** — batas jumlah operasi API yang berjalan bersamaan, menghasilkan error `rateLimitExceeded` yang sama sekali berbeda dari quota resource (GCE-029).\n\n**Perbedaan krusial — Quota vs Resource Availability (GCE-017, GCE-026):**\n> \"Allocation quotas are the maximum number of resources you can create of that resource type, if those resources are available. Quotas don't guarantee that resources are always available.\" (GCE-017)\n\n- **Quota exceeded** — batas akun/project tercapai; solusi: request peningkatan quota (tidak tersedia untuk akun Free Trial) (GCE-017).\n- **Resource availability error** (`ZONE_RESOURCE_POOL_EXHAUSTED` dan variannya seperti `cpu_availability`, `memory_availability`, `local_ssd_availability`, `gpu_availability`) — kapasitas fisik zone tersebut sedang habis, **bukan** masalah quota; solusi: coba zone/region lain, ubah konfigurasi (machine series, jumlah Local SSD/GPU), gunakan Flex-start/Spot VM, atau buat reservation terlebih dahulu (GCE-026).\n\n**Mengapa penting saat troubleshooting?** Kedua kondisi ini menghasilkan kegagalan create/start VM yang terasa mirip bagi pengguna, tetapi jalur diagnosis dan solusinya berbeda — agent tidak boleh menyamakan keduanya (lihat `troubleshooting_topics.md`, topik \"Quota exceeded\" dan \"VM gagal dibuat atau start\")."
+}

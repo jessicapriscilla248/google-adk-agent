@@ -1,0 +1,15 @@
+{
+  "document_id": "basics-08-internal-ip-dan-external-ip",
+  "title": "Internal IP dan External IP",
+  "category": "networking",
+  "source_ids": [
+    "GCE-013",
+    "GCE-021"
+  ],
+  "url": "https://docs.cloud.google.com/compute/docs/ip-addresses",
+  "source_urls": {
+    "GCE-013": "https://docs.cloud.google.com/compute/docs/ip-addresses",
+    "GCE-021": "https://docs.cloud.google.com/iap/docs/using-tcp-forwarding"
+  },
+  "text": "**Internal IP:** Dialokasikan dari subnet tempat NIC terhubung; hanya dapat diakses dalam VPC yang sama; digunakan untuk komunikasi antar-instance internal (GCE-013).\n\n**External IP:** Memungkinkan komunikasi dengan internet/jaringan luar VPC; hanya resource dengan external IP yang dapat berkomunikasi langsung ke luar VPC (GCE-013).\n\n**Ephemeral vs Static:**\n- **Ephemeral** — ditetapkan otomatis, dapat berubah kapan saja.\n- **Static** — alamat tetap yang dipesan pengguna, tidak berubah selama dipegang.\n\n**Alternatif tanpa external IP:** Cloud NAT untuk outbound traffic, IAP untuk akses administratif (SSH/RDP), atau load balancer untuk serving traffic masuk (GCE-013, GCE-021). Menghapus external IP mengurangi permukaan serangan (attack surface) (GCE-013).\n\n**Mengapa penting saat troubleshooting?** \"Tidak ada akses internet\" dan \"SSH/RDP gagal\" sering disebabkan oleh ketiadaan external IP (atau IP berubah karena ephemeral) dikombinasikan dengan tidak adanya jalur alternatif (Cloud NAT/IAP) — lihat `troubleshooting_topics.md`."
+}
